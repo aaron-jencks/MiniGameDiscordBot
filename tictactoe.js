@@ -38,6 +38,29 @@ class TicTacToeBoard {
     isValid(r, c) {
         return r >= 0 && r < 3 && c >= 0 && c < 3 && this.board[r][c] == 0;
     }
+
+    isOver() {
+        for(var i = 0; i < 3; i++) {
+            if (this.board[0][i] != 0 && this.board[0][i] == this.board[1][i] && this.board[0][i] == this.board[2][i]) return true;  // Vertical checks
+            if (this.board[i][0] != 0 && this.board[i][0] == this.board[i][1] && this.board[i][0] == this.board[i][2]) return true;  // Horizontal checks
+        }
+
+        return (this.board[0][0] != 0 && this.board[0][0] == this.board[1][1] && this.board[0][0] == this.board[2][2]) ||            // Diagonal 1
+            (this.board[2][0] != 0 && this.board[2][0] == this.board[1][1] && this.board[1][1] == this.board[0][2]);                 // Diagonal 2
+    }
+
+    winner() {
+        if (this.isOver()) {
+            for(var i = 0; i < 3; i++) {
+                if (this.board[0][i] != 0 && this.board[0][i] == this.board[1][i] && this.board[0][i] == this.board[2][i]) return this.board[0][i] == 1;  // Vertical checks
+                if (this.board[i][0] != 0 && this.board[i][0] == this.board[i][1] && this.board[i][0] == this.board[i][2]) return this.board[i][0] == 1;  // Horizontal checks
+            }
+    
+            return (this.board[0][0] == 1 && this.board[0][0] == this.board[1][1] && this.board[0][0] == this.board[2][2]) ||            // Diagonal 1
+                (this.board[2][0] == 1 && this.board[2][0] == this.board[1][1] && this.board[1][1] == this.board[0][2]);                 // Diagonal 2
+        }
+        return false;
+    }
 }
 
 const funcNames = [
@@ -66,9 +89,16 @@ const funcDefs = [
         if (currentGame.isValid(row, column)) {
             currentGame.place(row, column);
             currentGame.togglePlayer();
-            ctx.reply(currentGame.display());
         }
-        else ctx.reply(`Sorry but (${row}, ${column}) is not valid!\n${currentGame.display()}`);
+        else {
+            ctx.reply(`Sorry but (${row}, ${column}) is not valid!\n${currentGame.display()}`);
+            return;
+        }
+
+        if (currentGame.isOver()) {
+            ctx.reply(currentGame.display() + `\n${currentGame.winner() ? currentGame.player1 : currentGame.player2} wins!`);
+        }
+        else ctx.reply(currentGame.display());
     }),
 
     new DiscordCommand('ttt_board', ctx => {
