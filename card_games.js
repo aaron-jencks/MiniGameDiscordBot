@@ -4,6 +4,10 @@ class Card {
         this.suit = suit;
     }
 
+    toString() {
+        return this.value + this.suit;
+    }
+
     display() {
         let symbol = "";
         if (this.suit == CardSuitEnum.Clubs) symbol = "\u2667";
@@ -43,27 +47,27 @@ class Card {
 }
 
 const CardValueEnum = {
-    "Ace": 0,
-    "2": 1,
-    "3": 2,
-    "4": 3,
-    "5": 4,
-    "6": 5,
-    "7": 6,
-    "8": 7,
-    "9": 8,
-    "10": 9,
-    "Jack": 10,
-    "Queen": 11,
-    "King": 12,
-    "Joker": 13
+    "Ace": 'A',
+    "2": '2',
+    "3": '3',
+    "4": '4',
+    "5": '5',
+    "6": '6',
+    "7": '7',
+    "8": '8',
+    "9": '9',
+    "10": 'T',
+    "Jack": 'J',
+    "Queen": 'Q',
+    "King": 'K',
+    "Joker": 'JO'
 }
 
 const CardSuitEnum = {
-    "Spades": 0,
-    "Clubs": 1,
-    "Diamonds": 2,
-    "Hearts": 3
+    "Spades": 'S',
+    "Clubs": 'C',
+    "Diamonds": 'D',
+    "Hearts": 'H'
 }
 
 class CardDeck {
@@ -99,14 +103,23 @@ class CardDeck {
     }
 
     display() {
-        const filler = "\u259A\u259A\u259A\u259A\u259A";
-        return `\u250c\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2518`;
+        return card_back();
     }
+
+    toString() {
+        return this.cards.map(c => { return c.toString(); }).join(' ');
+    }
+}
+
+const card_back = () => {
+    const filler = "\u259A\u259A\u259A\u259A\u259A";
+    return `\u250c\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2518`;
 }
 
 module.exports = {
     Card,
     CardSuitEnum,
     CardValueEnum,
-    CardDeck
+    CardDeck,
+    card_back
 }
