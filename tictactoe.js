@@ -111,7 +111,7 @@ const funcDefs = [
 
         if (myCurrentGame.isOver()) {
             ctx.reply(myCurrentGame.display() + `\n${(myCurrentGame.winner() == 0) ? "Cat's Game!" : 
-                (((myCurrentGame.winner() == 1) ? myCurrentGame.player1 : myCurrentGame.player2) + "wins!")}`);
+                (((myCurrentGame.winner() == 1) ? myCurrentGame.player1 : myCurrentGame.player2) + " wins!")}`);
         }
         else ctx.reply(myCurrentGame.display());
     }),

@@ -247,7 +247,7 @@ const funcDefs = [
 
         if (myCurrentGame.isOver()) {
             ctx.reply(myCurrentGame.display() + `\n${(myCurrentGame.winner() == -1) ? "It's a tie!" : 
-                (((myCurrentGame.winner() == 1) ? myCurrentGame.player1 : myCurrentGame.player2) + "wins!")}`);
+                (((myCurrentGame.winner() == 1) ? myCurrentGame.player1 : myCurrentGame.player2) + " wins!")}`);
         }
         else ctx.reply(myCurrentGame.display());
     }),
