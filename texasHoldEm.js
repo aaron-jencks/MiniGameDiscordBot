@@ -242,14 +242,10 @@ const funcNames = [
 	new SlashCommandBuilder().setName('poker_join').setDescription('Joins the current poker game starting with the next hand'),
     new SlashCommandBuilder().setName('poker_call').setDescription('Bets on the current round in the current poker game'),
     new SlashCommandBuilder().setName('poker_raise').setDescription('Raises the bet on the current round in the current poker game')
-        .addIntegerOption(option => {
-            option.setName('amount').setDescription('Amount to raise').setRequired(true);
-        }),
+        .addIntegerOption(option => option.setName('amount').setDescription('Amount to raise').setRequired(true)),
     new SlashCommandBuilder().setName('poker_fold').setDescription('Folds out of the current poker round'),
     new SlashCommandBuilder().setName('poker_set_balance').setDescription('Sets your current balance for poker currency')
-        .addIntegerOption(option => {
-            option.setName('balance').setDescription('New balance').setRequired(true);
-        }),
+        .addIntegerOption(option => option.setName('balance').setDescription('New balance').setRequired(true)),
     new SlashCommandBuilder().setName('poker_leave').setDescription('Leaves the current poker game')
 ]
 

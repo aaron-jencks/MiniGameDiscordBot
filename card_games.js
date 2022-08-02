@@ -79,6 +79,12 @@ class CardDeck {
 
     populate() {
         this.reset();
+        
+        let sname = '';
+        let suit = '';
+        let vname = '';
+        let value = '';
+
         for([sname, suit] of Object.entries(CardSuitEnum)) {
             for([vname, value] of Object.entries(CardValueEnum)) {
                 this.addCard(new Card(value, suit));
