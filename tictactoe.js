@@ -40,26 +40,38 @@ class TicTacToeBoard {
     }
 
     isOver() {
-        for(var i = 0; i < 3; i++) {
+        let hasEmpty = false;
+        for(let i = 0; i < 3; i++) {
             if (this.board[0][i] != 0 && this.board[0][i] == this.board[1][i] && this.board[0][i] == this.board[2][i]) return true;  // Vertical checks
             if (this.board[i][0] != 0 && this.board[i][0] == this.board[i][1] && this.board[i][0] == this.board[i][2]) return true;  // Horizontal checks
+            if (!hasEmpty) {
+                for (let j = 0; j < 3; j++) {
+                    if (this.board[i][j] == 0) {
+                        hasEmpty = true;
+                        break;
+                    }
+                }
+            }
         }
 
         return (this.board[0][0] != 0 && this.board[0][0] == this.board[1][1] && this.board[0][0] == this.board[2][2]) ||            // Diagonal 1
-            (this.board[2][0] != 0 && this.board[2][0] == this.board[1][1] && this.board[1][1] == this.board[0][2]);                 // Diagonal 2
+            (this.board[2][0] != 0 && this.board[2][0] == this.board[1][1] && this.board[1][1] == this.board[0][2]) ||               // Diagonal 2
+            !hasEmpty;                                                                                                               // Cat's game
     }
 
     winner() {
         if (this.isOver()) {
             for(var i = 0; i < 3; i++) {
-                if (this.board[0][i] != 0 && this.board[0][i] == this.board[1][i] && this.board[0][i] == this.board[2][i]) return this.board[0][i] == 1;  // Vertical checks
-                if (this.board[i][0] != 0 && this.board[i][0] == this.board[i][1] && this.board[i][0] == this.board[i][2]) return this.board[i][0] == 1;  // Horizontal checks
+                if (this.board[0][i] != 0 && this.board[0][i] == this.board[1][i] && this.board[0][i] == this.board[2][i]) return this.board[0][i];  // Vertical checks
+                if (this.board[i][0] != 0 && this.board[i][0] == this.board[i][1] && this.board[i][0] == this.board[i][2]) return this.board[i][0];  // Horizontal checks
             }
+
+            if (this.board[0][0] != 0 && this.board[0][0] == this.board[1][1] && this.board[0][0] == this.board[2][2]) return this.board[0][0];      // Diagonal 1
+            if (this.board[2][0] != 0 && this.board[2][0] == this.board[1][1] && this.board[1][1] == this.board[0][2]) return this.board[2][0];      // Diagonal 2
     
-            return (this.board[0][0] == 1 && this.board[0][0] == this.board[1][1] && this.board[0][0] == this.board[2][2]) ||            // Diagonal 1
-                (this.board[2][0] == 1 && this.board[2][0] == this.board[1][1] && this.board[1][1] == this.board[0][2]);                 // Diagonal 2
+            return 0;                                                                                                                                // Cat's game
         }
-        return false;
+        return -1;
     }
 }
 
@@ -98,7 +110,8 @@ const funcDefs = [
         }
 
         if (myCurrentGame.isOver()) {
-            ctx.reply(myCurrentGame.display() + `\n${myCurrentGame.winner() ? myCurrentGame.player1 : myCurrentGame.player2} wins!`);
+            ctx.reply(myCurrentGame.display() + `\n${(myCurrentGame.winner() == 0) ? "Cat's Game!" : 
+                (((myCurrentGame.winner() == 1) ? myCurrentGame.player1 : myCurrentGame.player2) + "wins!")}`);
         }
         else ctx.reply(myCurrentGame.display());
     }),
