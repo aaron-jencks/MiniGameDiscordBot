@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { DiscordCommand } = require('./discord-command-templates.js');
 
-var currentGame = null;
+var currentGame = new Map();
 
 class TicTacToeBoard {
     constructor(p1, p2, p1o) {
@@ -73,12 +73,12 @@ const funcNames = [
 
 const funcDefs = [
     new DiscordCommand('ttt_new', ctx => { 
-        currentGame = new TicTacToeBoard('Xs', 'Os', Math.random() >= 0.5); 
-        ctx.reply("Created a new Tic Tac Toe Game!\n"+currentGame.display());
+        currentGame.set(ctx.guildId, new TicTacToeBoard('Xs', 'Os', Math.random() >= 0.5));
+        ctx.reply("Created a new Tic Tac Toe Game!\n"+currentGame.get(ctx.guildId).display());
     }),
 
     new DiscordCommand('ttt_play', ctx => {
-        if (currentGame == null) {
+        if (!currentGame.has(ctx.guildId)) {
             ctx.reply("You need to start a new game with 'ttt.new' first!");
             return;
         }
@@ -86,27 +86,29 @@ const funcDefs = [
         const row = ctx.options.getInteger("row");
         const column = ctx.options.getInteger("column");
 
-        if (currentGame.isValid(row, column)) {
-            currentGame.place(row, column);
-            currentGame.togglePlayer();
+        let myCurrentGame = currentGame.get(ctx.guildId);
+
+        if (myCurrentGame.isValid(row, column)) {
+            myCurrentGame.place(row, column);
+            myCurrentGame.togglePlayer();
         }
         else {
-            ctx.reply(`Sorry but (${row}, ${column}) is not valid!\n${currentGame.display()}`);
+            ctx.reply(`Sorry but (${row}, ${column}) is not valid!\n${myCurrentGame.display()}`);
             return;
         }
 
-        if (currentGame.isOver()) {
-            ctx.reply(currentGame.display() + `\n${currentGame.winner() ? currentGame.player1 : currentGame.player2} wins!`);
+        if (myCurrentGame.isOver()) {
+            ctx.reply(myCurrentGame.display() + `\n${myCurrentGame.winner() ? myCurrentGame.player1 : myCurrentGame.player2} wins!`);
         }
-        else ctx.reply(currentGame.display());
+        else ctx.reply(myCurrentGame.display());
     }),
 
     new DiscordCommand('ttt_board', ctx => {
-        if (currentGame == null) {
+        if (!currentGame.has(ctx.guildId)) {
             ctx.reply("You need to start a new game with 'ttt.new' first!");
             return;
         }
-        ctx.reply(currentGame.display());
+        ctx.reply(currentGame.get(ctx.guildId).display());
     })
 ]
 
