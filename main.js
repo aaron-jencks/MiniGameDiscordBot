@@ -1,6 +1,9 @@
 require("dotenv").config()
 const discord = require("discord.js")
-const { funcDefs } = require("./tictactoe.js");
+const ttt = require("./tictactoe.js");
+const c4 = require("./connectfour.js");
+
+const funcDefs = ttt.funcDefs.concat(c4.funcDefs);
 
 const client = new discord.Client({
     intents: discord.GatewayIntentBits.Guilds,

@@ -1,9 +1,10 @@
 require("dotenv").config()
-const { funcNames } = require("./tictactoe.js");
+const ttt = require("./tictactoe.js");
+const c4 = require("./connectfour.js");
 const { Routes } = require('discord.js');
 const { REST } = require('@discordjs/rest');
 
-const commands = (funcNames)
+const commands = (ttt.funcNames.concat(c4.funcNames))
 	.map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
