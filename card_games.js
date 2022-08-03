@@ -99,9 +99,8 @@ class CardDeck {
         for([sname, suit] of Object.entries(CardSuitEnum)) {
             if (suit !== CardSuitEnum.None) {
                 for([vname, value] of Object.entries(CardValueEnum)) {
-                    for([vname, value] of Object.entries(CardValueEnum)) {
-                        if (value !== CardValueEnum.Joker) this.addCard(new Card(value, suit));
-                    }
+                    if (value !== CardValueEnum.Joker && value !== CardValueEnum.convertToLib) 
+                        this.addCard(new Card(value, suit));
                 }
             }
         }
@@ -110,6 +109,8 @@ class CardDeck {
             this.addCard(new Card(CardValueEnum.Joker, CardSuitEnum.None));
             this.addCard(new Card(CardValueEnum.Joker, CardSuitEnum.None));
         }
+
+        console.log(`Created a deck with ${this.cards.length} cards in it`);
     }
 
     reset() {

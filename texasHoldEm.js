@@ -139,14 +139,14 @@ class TexasHoldEmBoard {
     }
 
     dealCards() {
-        if (this.playerMap.length > 0) {
-            this.playerMap.forEach(v => {
-                v.hand.reset();
-                v.hand.addCard(this.deck.draw());
-                v.hand.addCard(this.deck.draw());
-                v.folded = false;
-            })
-        }
+        console.log("Dealing the cards to players");
+        this.playerMap.forEach(v => {
+            v.hand.reset();
+            v.hand.addCard(this.deck.draw());
+            v.hand.addCard(this.deck.draw());
+            v.folded = false;
+            console.log(v.hand.toString());
+        });
     }
 
     call(player) {
