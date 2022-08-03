@@ -10,10 +10,11 @@ class Card {
 
     display() {
         let symbol = "";
-        if (this.suit == CardSuitEnum.Clubs) symbol = "\u2667";
-        else if (this.suit == CardSuitEnum.Spades) symbol = "\u2664";
+        if (this.suit == CardSuitEnum.Clubs) symbol = "\u2663";
+        else if (this.suit == CardSuitEnum.Spades) symbol = "\u2660";
         else if (this.suit == CardSuitEnum.Hearts) symbol = "\u2665";
         else if (this.suit == CardSuitEnum.Diamonds) symbol = "\u2666";
+        else symbol = "J";
 
         let valueLength = 1;
         if (this.value == CardValueEnum.Ace) valueLength = 3;
@@ -47,7 +48,7 @@ class Card {
 }
 
 const CardValueEnum = {
-    "Ace": 'A',
+    "Ace": 'Ace',
     "2": '2',
     "3": '3',
     "4": '4',
@@ -56,18 +57,19 @@ const CardValueEnum = {
     "7": '7',
     "8": '8',
     "9": '9',
-    "10": 'T',
-    "Jack": 'J',
-    "Queen": 'Q',
-    "King": 'K',
-    "Joker": 'JO'
+    "10": '10',
+    "Jack": 'Jack',
+    "Queen": 'Queen',
+    "King": 'King',
+    "Joker": 'Joker'
 }
 
 const CardSuitEnum = {
     "Spades": 'S',
     "Clubs": 'C',
     "Diamonds": 'D',
-    "Hearts": 'H'
+    "Hearts": 'H',
+    "None": "N"
 }
 
 class CardDeck {
@@ -86,9 +88,18 @@ class CardDeck {
         let value = '';
 
         for([sname, suit] of Object.entries(CardSuitEnum)) {
-            for([vname, value] of Object.entries(CardValueEnum)) {
-                this.addCard(new Card(value, suit));
+            if (suit !== CardSuitEnum.None) {
+                for([vname, value] of Object.entries(CardValueEnum)) {
+                    for([vname, value] of Object.entries(CardValueEnum)) {
+                        if (value !== CardValueEnum.Joker) this.addCard(new Card(value, suit));
+                    }
+                }
             }
+        }
+
+        if (this.jokers) {
+            this.addCard(new Card(CardValueEnum.Joker, CardSuitEnum.None));
+            this.addCard(new Card(CardValueEnum.Joker, CardSuitEnum.None));
         }
     }
 
@@ -118,7 +129,7 @@ class CardDeck {
 }
 
 const card_back = () => {
-    const filler = "\u259A\u259A\u259A\u259A\u259A";
+    const filler = "\u2591\u2591\u2591\u2591\u2591";
     return `\u250c\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2502${filler}\u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2518`;
 }
 
