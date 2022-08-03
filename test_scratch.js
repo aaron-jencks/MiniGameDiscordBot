@@ -23,7 +23,7 @@ poker_funcs.get('poker_new')(testContext);
 poker_funcs.get('poker_join')(testContext);
 poker_funcs.get('poker_start')(testContext);
 poker_funcs.get('poker_call')(testContext);
-poker_funcs.get('poker_call')(testContext);
+poker_funcs.get('poker_raise')(testContext);
 poker_funcs.get('poker_call')(testContext);
 poker_funcs.get('poker_call')(testContext);
 poker_funcs.get('poker_balance')(testContext);
