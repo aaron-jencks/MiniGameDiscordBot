@@ -149,17 +149,32 @@ class TexasHoldEmBoard {
         });
     }
 
+    bet(player, amount) {
+        const tplayer = this.playerMap.get(player);
+
+        if (amount < 0) {
+            amount = tplayer.balance;
+            this.pot += amount;
+            tplayer.balance = 0;
+        }
+        else {
+            this.pot += amount;
+            tplayer.balance -= amount;
+        }
+
+        if (amount > this.currentBet) this.currentBet = amount;
+
+        tplayer.currentBet += amount;
+        tplayer.needsBet = false;
+    }
+
     call(player) {
         let amt = this.getCallAmount(player);
 
         console.log(`Player needs to bet ${amt}`);
 
         if (this.isValidBet(player, amt)) {
-            this.pot += amt;
-
-            this.playerMap.get(player).currentBet += amt;
-            this.playerMap.get(player).needsBet = false;
-
+            this.bet(player, amt);
             return amt;
         }
 
@@ -167,12 +182,11 @@ class TexasHoldEmBoard {
     }
 
     raise(player, amt) {
-        if (this.isValidBet(player, amt) && amt > this.currentBet) {
-            this.pot += amt;
-            this.currentBet = amt;
+        if (this.isValidBet(player, amt) && (amt > this.currentBet || amt < 0)) {
+            this.bet(player, bet);
 
-            this.playerMap.forEach(v, k, m => {
-                v.needsBet = true;
+            this.playerMap.forEach(v => {
+                if (!v.folded && v.balance > 0) v.needsBet = true;
             })
 
             this.playerMap.get(player).needsBet = false;
@@ -216,6 +230,7 @@ class TexasHoldEmBoard {
 
                     // Setup for ante
                     this.playerMap.forEach(v => {
+                        v.folded = false;
                         v.needsBet = true;
                         v.currentBet = 0;
                     })
@@ -426,6 +441,45 @@ const funcDefs = [
 
                 ctx.reply(result);
                 return;
+            }
+
+            result += ((myCurrentGame.roundState == 1) ? `\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!` : '');
+
+            ctx.reply(result);
+            return;
+        }
+    }),
+
+    new DiscordCommand('poker_raise', ctx => { 
+        if (!currentGame.has(ctx.guildId)) {
+            ctx.reply("You need to create a new game first");
+            return;
+        }
+
+        let myCurrentGame = currentGame.get(ctx.guildId);
+
+        if (!myCurrentGame.isPlayer(ctx.user.id)) {
+            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
+            return;
+        }
+        else if (myCurrentGame.getCurrentBetter() !== ctx.user.id) {
+            ctx.reply("You're not up to bet! Wait your turn!");
+            return;
+        }
+
+        const raiseAmount = ctx.options.getInteger("amount");
+
+        amt = myCurrentGame.raise(ctx.user.id, raiseAmount);
+        if (amt == null) {
+            ctx.reply("Sorry, but you can't raise right now");
+            return;
+        }
+        else {
+            let result = (amt < 0) ? "You're All-in" : `You bet ${amt}`;
+            myCurrentGame.nextPhase();
+
+            if (myCurrentGame.roundState < 4) {
+                myCurrentGame.nextPhase();
             }
 
             result += ((myCurrentGame.roundState == 1) ? `\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!` : '');
