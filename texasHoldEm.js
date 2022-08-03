@@ -217,6 +217,7 @@ class TexasHoldEmBoard {
                     // Setup for ante
                     this.playerMap.forEach(v => {
                         v.needsBet = true;
+                        v.currentBet = 0;
                     })
                     this.currentBet = 10;
 
@@ -292,16 +293,16 @@ class TexasHoldEmBoard {
                         }
                     })
 
-                    scoreMap.set(p) = {
+                    scoreMap.set(p, {
                         'score': minScore,
                         'rank': handType
-                    };
+                    });
                 })
 
                 // Determine the winners of the round
                 let min = 500000;
                 let winningPlayers = [];
-                this.scoreMap.forEach((v, k) => {
+                scoreMap.forEach((v, k) => {
                     if (v.score < min) {
                         min = v.score;
                         winningPlayers = [{ 'player': k, 'hand': v.rank }];
