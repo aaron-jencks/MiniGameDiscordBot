@@ -61,7 +61,16 @@ const CardValueEnum = {
     "Jack": 'Jack',
     "Queen": 'Queen',
     "King": 'King',
-    "Joker": 'Joker'
+    "Joker": 'Joker',
+    convertToLib: c => {
+        if (c === CardValueEnum.Ace) return 'A';
+        else if (c === CardValueEnum[10]) return 'T';
+        else if (c === CardValueEnum.Jack) return 'J';
+        else if (c === CardValueEnum.Queen) return 'Q';
+        else if (c === CardValueEnum.King) return 'K';
+        else if (c === CardValueEnum.Joker) return 'JO';
+        else return c;
+    }
 }
 
 const CardSuitEnum = {
