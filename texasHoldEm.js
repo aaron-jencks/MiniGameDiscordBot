@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, userMention } = require('discord.js');
 const { DiscordCommand } = require('./discord-command-templates.js');
-const { Card, CardSuitEnum, CardValueEnum, CardDeck, card_back } = require("./card_games.js");
+const { CardDeck, card_back } = require("./card_games.js");
 const PokerHand = require("poker-hand-evaluator");
-const { combinations, combinations } = require("./utils.js");
+const { combinations } = require("./utils.js");
 
 var currentGame = new Map();
 
@@ -20,6 +20,10 @@ class TexasHoldEmBoard {
         this.playerIndex = 0;
         this.roundState = 0;
         this.currentBet = 0;
+        this.lastRound = {
+            winners: [],
+            amount: 0
+        };
     }
 
     display() {
@@ -34,10 +38,6 @@ class TexasHoldEmBoard {
                 first = false;
                 card_width = lines[0].length;
                 card_height = lines.length;
-
-                // console.log("Assigned card dimensions");
-                // console.log(card_height);
-                // console.log(card_width);
             }
             river.push(lines);
         });
@@ -45,10 +45,6 @@ class TexasHoldEmBoard {
             card_width = 7;
             card_height = 7;
         }
-
-        // console.log("Actual card dimensions");
-        // console.log(card_height);
-        // console.log(card_width);
 
         let topBottomBorder = "";
         for (let i = 0; i < (card_width * 5); i++) {
@@ -193,7 +189,7 @@ class TexasHoldEmBoard {
     }
 
     startRound() {
-        this.players = this.buy_ins;
+        this.players = this.players.concat(this.buy_ins);
         this.buy_ins = [];
         this.roundState = 0;
         this.nextPhase();
@@ -203,6 +199,9 @@ class TexasHoldEmBoard {
         switch (this.roundState) {
             case 0:
                 // Dealing phase
+
+                // Reset the pot
+                this.pot = 0;
 
                 // Reset the decks
                 this.deck.reset();
@@ -276,23 +275,49 @@ class TexasHoldEmBoard {
 
                 // Calculate the scores of each hand
                 this.players.forEach(p => {
-                    let combinedHand = this.playerMap.get(p).hand.cards.concat(this.deck.cards);
-                    let combinations = combinations(combinedHand, 5);
+                    console.log(`${this.playerMap.get(p).nickname}'s hand contents:\n${this.playerMap.get(p).hand.toString()}\nRiver contents:\n${this.river.toString()}`);
+                    let combinedHand = this.playerMap.get(p).hand.cards.concat(this.river.cards);
+                    let handCombinations = combinations(combinedHand, 5);
 
-                    scoreMap.set(p) = (new PokerHand(this.playerMap.get(p).hand.toString())).getScore();
+                    let tempHand = new CardDeck(false, false);
+                    let minScore = 500000;
+                    let handType = 'None';
+                    handCombinations.forEach(c => {
+                        tempHand.cards = c;
+                        let ph = new PokerHand(tempHand.toString());
+                        console.log(ph.describe());
+                        if (ph.getScore() < minScore) {
+                            minScore = ph.getScore();
+                            handType = ph.getRank().replace('_', ' ');
+                        }
+                    })
+
+                    scoreMap.set(p) = {
+                        'score': minScore,
+                        'rank': handType
+                    };
                 })
 
                 // Determine the winners of the round
                 let min = 500000;
                 let winningPlayers = [];
-                this.scoreMap.forEach(v, k, m => {
-                    if (v < min) {
-                        min = v;
-                        winningPlayers = [k];
+                this.scoreMap.forEach((v, k) => {
+                    if (v.score < min) {
+                        min = v.score;
+                        winningPlayers = [{ 'player': k, 'hand': v.rank }];
                     }
-                    else if (v == min) {
-                        winningPlayers.push(k);
+                    else if (v.score == min) {
+                        winningPlayers.push({ 'player': k, 'hand': v.rank });
                     }
+                });
+
+                let splitPot = Math.floor(this.pot / winningPlayers.length);
+                this.lastRound.amount = splitPot;
+                this.lastRound.winners = []
+                winningPlayers.forEach(p => {
+                    console.log(`${this.playerMap.get(p.player).nickname} won with a ${p.hand}, they get ${splitPot}`);
+                    this.playerMap.get(p.player).balance += splitPot;
+                    this.lastRound.winners.push(p);
                 });
 
                 break;
@@ -386,6 +411,20 @@ const funcDefs = [
 
             if (myCurrentGame.roundState < 4) {
                 myCurrentGame.nextPhase();
+            }
+            else if (myCurrentGame.roundState == 4) {
+                result += `\n${myCurrentGame.display()}\n`;
+
+                myCurrentGame.nextPhase();
+
+                myCurrentGame.lastRound.winners.forEach(w => {
+                    result += `${userMention(w.player)} wins with a ${w.hand} for ${myCurrentGame.lastRound.amount}!\n`;
+                })
+
+                result += 'The round is over! use \`/poker_start\` to start the next round!';
+
+                ctx.reply(result);
+                return;
             }
 
             result += ((myCurrentGame.roundState == 1) ? `\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!` : '');

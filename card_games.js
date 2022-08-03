@@ -5,7 +5,7 @@ class Card {
     }
 
     toString() {
-        return this.value + this.suit;
+        return CardValueEnum.convertToLib(this.value) + this.suit;
     }
 
     display() {
