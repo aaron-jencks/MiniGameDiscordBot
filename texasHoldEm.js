@@ -183,7 +183,7 @@ class TexasHoldEmBoard {
 
     raise(player, amt) {
         if (this.isValidBet(player, amt) && (amt > this.currentBet || amt < 0)) {
-            this.bet(player, bet);
+            this.bet(player, amt);
 
             this.playerMap.forEach(v => {
                 if (!v.folded && v.balance > 0) v.needsBet = true;
