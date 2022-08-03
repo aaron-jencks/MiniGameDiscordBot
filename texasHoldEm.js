@@ -2,6 +2,7 @@ const { SlashCommandBuilder, userMention } = require('discord.js');
 const { DiscordCommand } = require('./discord-command-templates.js');
 const { Card, CardSuitEnum, CardValueEnum, CardDeck, card_back } = require("./card_games.js");
 const PokerHand = require("poker-hand-evaluator");
+const { combinations, combinations } = require("./utils.js");
 
 var currentGame = new Map();
 
@@ -74,7 +75,15 @@ class TexasHoldEmBoard {
             result += "\u2502\n";
         }
         result += "\u2514" + topBottomBorder + "\u2518\n";
-        result += `Current Pot: ${this.pot}\nDealer: ${this.getDisplayName(this.dealer)}\nLittle Blind: ${this.getDisplayName(this.littleBlind)}(50)\nBig Blind: ${this.getDisplayName(this.bigBlind)}(100)\n\`\`\``;
+        result += `Current Pot: ${this.pot}\n\nDealer: ${this.getDisplayName(this.dealer)}`;
+        result += `\nLittle Blind: ${this.getDisplayName(this.littleBlind)}(50)\nBig Blind: ${this.getDisplayName(this.bigBlind)}(100)\n`;
+
+        result += '\nCurrent Players:\n';
+        this.players.forEach(p => {
+            result += `${this.players[this.playerIndex] == p ? '\u21d2 ' : '' }${p == this.dealer ? 'D ' : ''}${this.getDisplayName(p)} ${this.playerMap.get(p).folded ? 'FOLD' : ''}\n`;
+        })
+
+        result += '```';
         return result;
     }
 
@@ -89,7 +98,8 @@ class TexasHoldEmBoard {
                     'hand': new CardDeck(false, false),
                     'needsBet': true,
                     'currentBet': 0,
-                    'nickname': nickname
+                    'nickname': nickname,
+                    'folded': false,
                 });
             }
     
@@ -104,12 +114,16 @@ class TexasHoldEmBoard {
             'hand': playerMap.get(player).hand,
             'needsBet': true,
             'currentBet': 0,
-            'nickname': playerMap.get(player).nickname
+            'nickname': playerMap.get(player).nickname,
+            'folded': this.playerMap.get(player).folded
         });
     }
 
     nextPlayer() { 
         this.playerIndex = (this.playerIndex + 1) % this.players.length;
+        while (this.playerMap.get(this.players[this.playerIndex]).folded) {
+            this.playerIndex = (this.playerIndex + 1) % this.players.length;
+        }
     }
 
     getCallAmount(player) {
@@ -134,6 +148,7 @@ class TexasHoldEmBoard {
                 v.hand.reset();
                 v.hand.addCard(this.deck.draw());
                 v.hand.addCard(this.deck.draw());
+                v.folded = false;
             })
         }
     }
@@ -174,8 +189,7 @@ class TexasHoldEmBoard {
     }
 
     fold(player) {
-        this.players = this.players.filter(p => p !== player);
-        this.buy_ins.push(player)
+        this.playerMap.get(player).folded = true;
     }
 
     startRound() {
@@ -228,11 +242,12 @@ class TexasHoldEmBoard {
 
             case 1:
                 // Betting Phase
+                let prevPlayer = this.playerIndex;
                 this.nextPlayer();
-                if (this.playerIndex == 0) {
+                if (this.playerIndex <= prevPlayer) {
                     let moreBetting = false;
                     this.playerMap.forEach(v => {
-                        if (v.needsBet) moreBetting = true;
+                        if (v.needsBet && !v.folded) moreBetting = true;
                     })
                     if (!moreBetting) {
                         if (this.river.cards.length == 0) this.roundState = 2;
@@ -255,26 +270,31 @@ class TexasHoldEmBoard {
 
             case 4:
                 this.roundState = 0;
-                // // Distribution phase
-                // let scoreMap = new Map();
 
-                // // Calculate the scores of each hand
-                // this.players.forEach(p => {
-                //     scoreMap.set(p) = (new PokerHand(this.playerMap.get(p).hand.toString())).getScore();
-                // })
+                // Distribution phase
+                let scoreMap = new Map();
 
-                // // Determine the winners of the round
-                // let min = 500000;
-                // let winningPlayers = [];
-                // this.scoreMap.forEach(v, k, m => {
-                //     if (v < min) {
-                //         min = v;
-                //         winningPlayers = [k];
-                //     }
-                //     else if (v == min) {
-                //         winningPlayers.push(k);
-                //     }
-                // });
+                // Calculate the scores of each hand
+                this.players.forEach(p => {
+                    let combinedHand = this.playerMap.get(p).hand.cards.concat(this.deck.cards);
+                    let combinations = combinations(combinedHand, 5);
+
+                    scoreMap.set(p) = (new PokerHand(this.playerMap.get(p).hand.toString())).getScore();
+                })
+
+                // Determine the winners of the round
+                let min = 500000;
+                let winningPlayers = [];
+                this.scoreMap.forEach(v, k, m => {
+                    if (v < min) {
+                        min = v;
+                        winningPlayers = [k];
+                    }
+                    else if (v == min) {
+                        winningPlayers.push(k);
+                    }
+                });
+
                 break;
 
         }
