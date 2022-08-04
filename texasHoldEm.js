@@ -438,7 +438,7 @@ const funcNames = [
     new SlashCommandBuilder().setName('poker_check').setDescription('Checks on the current round in the current poker game'),
     new SlashCommandBuilder().setName('poker_raise').setDescription('Raises the bet on the current round in the current poker game')
         .addIntegerOption(option => option.setName('amount').setDescription('Amount to raise').setRequired(true)),
-    new SlashCommandBuilder().setName('poker_dealer_set').setDescription('Sets the dealer of the current round of poker')
+    new SlashCommandBuilder().setName('poker_set_dealer').setDescription('Sets the dealer of the current round of poker')
         .addUserOption(option => option.setName('dealer').setDescription('The person to set as the dealer').setRequired(true)),
     new SlashCommandBuilder().setName('poker_fold').setDescription('Folds out of the current poker round'),
     new SlashCommandBuilder().setName('poker_set_balance').setDescription('Sets your current balance for poker currency')
@@ -478,7 +478,7 @@ const funcDefs = [
         ctx.reply(`You've joined the current game`);
     }),
 
-    new DiscordCommand('poker_dealer_set', ctx => { 
+    new DiscordCommand('poker_set_dealer', ctx => { 
         if (!currentGame.has(ctx.guildId)) {
             ctx.reply("You need to create a new game first");
             return;
