@@ -55,10 +55,26 @@ poker_funcs.get('poker_dealer_set')(testContext);
 
 poker_funcs.get('poker_start')(testContext);
 
-poker_funcs.get('poker_call')(testContext);
+// Initial betting
 
 argMap.set('amount', 600);
 poker_funcs.get('poker_raise')(generateNewContext(testUser2));
 
 poker_funcs.get('poker_call')(testContext);
+
+// Flop performed
+
 poker_funcs.get('poker_call')(generateNewContext(testUser2));
+poker_funcs.get('poker_call')(testContext);
+
+// Flop performed
+
+poker_funcs.get('poker_call')(generateNewContext(testUser2));
+poker_funcs.get('poker_call')(testContext);
+
+// Flop performed
+
+poker_funcs.get('poker_call')(generateNewContext(testUser2));
+poker_funcs.get('poker_call')(testContext);
+
+// Winner announced
