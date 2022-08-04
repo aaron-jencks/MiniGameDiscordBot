@@ -14,6 +14,7 @@ class TexasHoldEmBoard {
         this.bigBlind = bb;
         this.littleBlind = lb;
         this.dealer = dealer;
+        this.dealerSet = false;
         this.bettingStart = {
             bigBlind : 0,
             littleBlind : 0
@@ -75,8 +76,8 @@ class TexasHoldEmBoard {
             result += "\u2502\n";
         }
         result += "\u2514" + topBottomBorder + "\u2518\n";
-        result += `Current Pot: ${this.pot}\n\nDealer: ${this.getDisplayName(this.dealer)}`;
-        result += `\nLittle Blind: ${this.getDisplayName(this.littleBlind)}(50)\nBig Blind: ${this.getDisplayName(this.bigBlind)}(100)\n`;
+        result += `Current Pot: ${this.pot}\n\nDealer: ${this.getDisplayName(this.dealer)}\n`;
+        // result += `\nLittle Blind: ${this.getDisplayName(this.littleBlind)}(50)\nBig Blind: ${this.getDisplayName(this.bigBlind)}(100)\n`;
 
         result += '\nCurrent Players:\n';
         this.players.forEach(p => {
@@ -103,8 +104,14 @@ class TexasHoldEmBoard {
                 });
             }
     
-            if (!this.buy_ins.includes(player))
-                this.buy_ins.push(player);
+            if (this.roundState != 0) {
+                if (!this.buy_ins.includes(player))
+                    this.buy_ins.push(player);
+            }
+            else {
+                if (!this.players.includes(player))
+                    this.players.push(player);
+            }
         }
     }
 
@@ -242,29 +249,14 @@ class TexasHoldEmBoard {
                     })
                     this.currentBet = 10;
 
-                    // Determine the dealer and the blinds
-                    let dealerIndex = Math.floor(Math.random() * this.players.length);
+                    if (!this.dealerSet) {
+                        // Determine the dealer and the blinds
+                        let dealerIndex = Math.floor(Math.random() * this.players.length);
+                        this.setDealerFromIndex(dealerIndex);
+                    }
+                    else console.log('Dealer was preset');
 
-                    this.dealer = this.players[dealerIndex];
-                    console.log(`Selected ${this.getDisplayName(this.dealer)}(${dealerIndex}, ${this.dealer}) as the dealer`);
-
-                    let smallBlindIndex = (dealerIndex < this.players.length - 1) ? dealerIndex + 1 : 0;
-
-                    // let bigBlindIndex = 0, smallBlindIndex = 0;
-                    // if (dealerIndex < this.players.length - 2) {
-                    //     smallBlindIndex = dealerIndex + 1;
-                    //     bigBlindIndex = dealerIndex + 2;
-                    // }
-                    // else {
-                    //     smallBlindIndex = (dealerIndex < this.players.length - 1) ? dealerIndex + 1 : 0;
-                    //     bigBlindIndex = (dealerIndex < this.players.length - 1) ? 0 : 1;
-                    // }
-
-                    // this.littleBlind = this.players[smallBlindIndex];
-                    // this.bigBlind = this.players[bigBlindIndex];
-
-                    this.bettingStart.littleBlind = smallBlindIndex;
-                    // this.bettingStart.bigBlind = bigBlindIndex;
+                    this.playerIndex = this.bettingStart.littleBlind;   // Would have to be changed if the blinds were reimplemented.
                 }
 
                 this.roundState += 1;
@@ -272,7 +264,6 @@ class TexasHoldEmBoard {
 
             case 1:
                 // Betting Phase
-                let prevPlayer = this.playerIndex;
                 this.nextPlayer();
                 console.log(`Moved player to ${this.playerIndex}`);
 
@@ -360,6 +351,8 @@ class TexasHoldEmBoard {
                     this.lastRound.winners.push(p);
                 });
 
+                this.dealerSet = false;
+
                 break;
 
         }
@@ -377,6 +370,27 @@ class TexasHoldEmBoard {
     isPlayer(username) {
         return this.players.includes(username);
     }
+
+    setDealerFromIndex(dealerIndex) {
+        this.dealer = this.players[dealerIndex];
+        console.log(`Selected ${this.getDisplayName(this.dealer)}(${dealerIndex}, ${this.dealer}) as the dealer`);
+
+        let smallBlindIndex = (dealerIndex < this.players.length - 1) ? dealerIndex + 1 : 0;
+
+        this.bettingStart.littleBlind = smallBlindIndex;
+
+        this.dealerSet = true;
+    }
+
+    setDealer(player) {
+        if (!this.isPlayer(player.id)) {
+            this.buyIn(player.id, player.username);
+        }
+
+        let dealerIndex = this.players.indexOf(player.id);
+
+        this.setDealerFromIndex(dealerIndex);
+    }
 }
 
 const funcNames = [
@@ -386,6 +400,8 @@ const funcNames = [
     new SlashCommandBuilder().setName('poker_call').setDescription('Bets on the current round in the current poker game'),
     new SlashCommandBuilder().setName('poker_raise').setDescription('Raises the bet on the current round in the current poker game')
         .addIntegerOption(option => option.setName('amount').setDescription('Amount to raise').setRequired(true)),
+    new SlashCommandBuilder().setName('poker_dealer_set').setDescription('Sets the dealer of the current round of poker')
+        .addUserOption(option => option.setName('dealer').setDescription('The person to set as the dealer').setRequired(true)),
     new SlashCommandBuilder().setName('poker_fold').setDescription('Folds out of the current poker round'),
     new SlashCommandBuilder().setName('poker_set_balance').setDescription('Sets your current balance for poker currency')
         .addIntegerOption(option => option.setName('balance').setDescription('New balance').setRequired(true)),
@@ -421,6 +437,25 @@ const funcDefs = [
 
         myCurrentGame.buyIn(ctx.user.id, ctx.user.username);
         ctx.reply(`You've joined the current game`);
+    }),
+
+    new DiscordCommand('poker_dealer_set', ctx => { 
+        if (!currentGame.has(ctx.guildId)) {
+            ctx.reply("You need to create a new game first");
+            return;
+        }
+
+        let myCurrentGame = currentGame.get(ctx.guildId);
+
+        if (myCurrentGame.roundState > 0) {
+            ctx.reply("You can't specify the dealer midway through a round!");
+            return;
+        }
+
+        const newDealer = ctx.options.getUser("dealer");
+
+        myCurrentGame.setDealer(newDealer);
+        ctx.reply(`${userMention(newDealer.id)} has been set as the dealer`);
     }),
 
     new DiscordCommand('poker_call', ctx => { 
