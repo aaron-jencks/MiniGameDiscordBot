@@ -78,3 +78,15 @@ poker_funcs.get('poker_call')(generateNewContext(testUser2));
 poker_funcs.get('poker_call')(testContext);
 
 // Winner announced
+
+// Folding round
+
+argMap.set('dealer', testUser);
+poker_funcs.get('poker_dealer_set')(testContext);
+poker_funcs.get('poker_start')(testContext);
+
+// argMap.set('amount', 600); // Still the 600 from last time
+poker_funcs.get('poker_raise')(generateNewContext(testUser2));
+poker_funcs.get('poker_fold')(testContext);
+
+// Winner announced

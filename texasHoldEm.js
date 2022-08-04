@@ -296,11 +296,14 @@ class TexasHoldEmBoard {
                 // Reset the better
                 this.playerIndex = this.bettingStart.littleBlind;
 
-                // Reset the 
+                // Reset the board state
                 this.playerMap.forEach(v => {
                     v.needsBet = true;
                     v.currentBet = 0;
                 })
+                this.currentBet = 0;
+
+                // Go back to betting
                 this.roundState = 1;
                 break;
 
@@ -312,29 +315,31 @@ class TexasHoldEmBoard {
 
                 // Calculate the scores of each hand
                 this.players.forEach(p => {
-                    console.log(`${this.playerMap.get(p).nickname}'s hand contents:\n${this.playerMap.get(p).hand.toString()}\nRiver contents:\n${this.river.toString()}`);
-                    let combinedHand = this.playerMap.get(p).hand.cards.concat(this.river.cards);
-                    let handCombinations = combinations(combinedHand, 5);
+                    if (!this.playerMap.get(p).folded) {
+                        console.log(`${this.playerMap.get(p).nickname}'s hand contents:\n${this.playerMap.get(p).hand.toString()}\nRiver contents:\n${this.river.toString()}`);
+                        let combinedHand = this.playerMap.get(p).hand.cards.concat(this.river.cards);
+                        let handCombinations = combinations(combinedHand, 5);
 
-                    let tempHand = new CardDeck(false, false);
-                    let minScore = 500000;
-                    let handType = 'None';
-                    handCombinations.forEach(c => {
-                        tempHand.cards = c;
-                        let ph = new PokerHand(tempHand.toString());
-                        // console.log(ph.describe());
-                        if (ph.getScore() < minScore) {
-                            minScore = ph.getScore();
-                            handType = ph.getRank().replace('_', ' ');
-                        }
-                    })
+                        let tempHand = new CardDeck(false, false);
+                        let minScore = 500000;
+                        let handType = 'None';
+                        handCombinations.forEach(c => {
+                            tempHand.cards = c;
+                            let ph = new PokerHand(tempHand.toString());
+                            // console.log(ph.describe());
+                            if (ph.getScore() < minScore) {
+                                minScore = ph.getScore();
+                                handType = ph.getRank().replace('_', ' ');
+                            }
+                        })
 
-                    console.log(`${this.playerMap.get(p).nickname} has a ${handType} with a score of ${minScore}`);
+                        console.log(`${this.playerMap.get(p).nickname} has a ${handType} with a score of ${minScore}`);
 
-                    scoreMap.set(p, {
-                        'score': minScore,
-                        'rank': handType
-                    });
+                        scoreMap.set(p, {
+                            'score': minScore,
+                            'rank': handType
+                        });
+                    }
                 })
 
                 // Determine the winners of the round
@@ -398,6 +403,24 @@ class TexasHoldEmBoard {
         let dealerIndex = this.players.indexOf(player.id);
 
         this.setDealerFromIndex(dealerIndex);
+    }
+
+    playerInCount() {
+        let result = 0;
+        this.players.forEach(p => {
+            let tplayer = this.playerMap.get(p);
+            if (!tplayer.folded) result++;
+        })
+        return result;
+    }
+
+    getPlayersIn() {
+        let result = [];
+        this.players.forEach(p => {
+            let tplayer = this.playerMap.get(p);
+            if (!tplayer.folded) result.push(tplayer);
+        })
+        return result;
     }
 }
 
@@ -598,6 +621,36 @@ const funcDefs = [
 
         amt = myCurrentGame.playerMap.get(ctx.user.id).balance;
         ctx.reply(`You're balance is ${amt}`);
+    }),
+
+    new DiscordCommand('poker_fold', ctx => { 
+        if (!currentGame.has(ctx.guildId)) {
+            ctx.reply("You need to create a new game first");
+            return;
+        }
+        let myCurrentGame = currentGame.get(ctx.guildId);
+
+        if (!myCurrentGame.isPlayer(ctx.user.id)) {
+            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
+            return;
+        }
+        else if (myCurrentGame.getCurrentBetter() !== ctx.user.id) {
+            ctx.reply("You're not up to bet! Wait your turn!");
+            return;
+        }
+
+        myCurrentGame.fold(ctx.user.id);
+
+        let result = `You've folded!`;
+
+        if (myCurrentGame.playerInCount() == 1) {
+            let remPlayers = myCurrentGame.getPlayersIn();
+            result += `\n${remPlayers[0].nickname} is the only player remaining!\nThey won ${myCurrentGame.pot}\nThe round is over, you can use \`/poker_start\` to start the next round.`;
+            myCurrentGame.roundState = 4;
+            myCurrentGame.nextPhase();
+        }
+
+        ctx.reply(result);
     }),
 ]
 
