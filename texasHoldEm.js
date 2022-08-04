@@ -435,6 +435,7 @@ const funcNames = [
     new SlashCommandBuilder().setName('poker_start').setDescription('Starts a new Texas Hold\'em game'),
 	new SlashCommandBuilder().setName('poker_join').setDescription('Joins the current poker game starting with the next hand'),
     new SlashCommandBuilder().setName('poker_call').setDescription('Bets on the current round in the current poker game'),
+    new SlashCommandBuilder().setName('poker_check').setDescription('Checks on the current round in the current poker game'),
     new SlashCommandBuilder().setName('poker_raise').setDescription('Raises the bet on the current round in the current poker game')
         .addIntegerOption(option => option.setName('amount').setDescription('Amount to raise').setRequired(true)),
     new SlashCommandBuilder().setName('poker_dealer_set').setDescription('Sets the dealer of the current round of poker')
@@ -547,6 +548,32 @@ const funcDefs = [
             ctx.reply(result);
             return;
         }
+    }),
+
+    new DiscordCommand('poker_check', ctx => { 
+        if (!currentGame.has(ctx.guildId)) {
+            ctx.reply("You need to create a new game first");
+            return;
+        }
+
+        let myCurrentGame = currentGame.get(ctx.guildId);
+
+        if (!myCurrentGame.isPlayer(ctx.user.id)) {
+            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
+            return;
+        }
+        else if (myCurrentGame.getCurrentBetter() !== ctx.user.id) {
+            ctx.reply("You're not up to bet! Wait your turn!");
+            return;
+        }
+
+        amt = myCurrentGame.getCallAmount(ctx.user.id);
+        if (amt != 0) {
+            ctx.reply(`Sorry, you can't check, you need to bet at least ${amt}`);
+            return;
+        }
+
+        myCurrentGame.call(ctx.user.id);
     }),
 
     new DiscordCommand('poker_raise', ctx => { 
