@@ -422,6 +422,12 @@ class TexasHoldEmBoard {
         })
         return result;
     }
+
+    dropPlayer(player) {
+        if (this.players.includes(player)) this.players = this.players.filter(p => p !== player);
+        if (this.buy_ins.includes(player)) this.buy_ins = this.buy_ins.filter(p => p !== player);
+        if (this.playerMap.has(player)) this.playerMap.delete(player);
+    }
 }
 
 const funcNames = [
@@ -435,6 +441,7 @@ const funcNames = [
         .addUserOption(option => option.setName('dealer').setDescription('The person to set as the dealer').setRequired(true)),
     new SlashCommandBuilder().setName('poker_fold').setDescription('Folds out of the current poker round'),
     new SlashCommandBuilder().setName('poker_set_balance').setDescription('Sets your current balance for poker currency')
+        .addUserOption(option => option.setName('user').setDescription('User to set the balance of').setRequired(true))
         .addIntegerOption(option => option.setName('balance').setDescription('New balance').setRequired(true)),
     new SlashCommandBuilder().setName('poker_leave').setDescription('Leaves the current poker game'),
     new SlashCommandBuilder().setName('poker_pot').setDescription('Returns the pot amount for the current poker game'),
@@ -623,6 +630,31 @@ const funcDefs = [
         ctx.reply(`You're balance is ${amt}`);
     }),
 
+    new DiscordCommand('poker_set_balance', ctx => { 
+        if (!currentGame.has(ctx.guildId)) {
+            ctx.reply("You need to create a new game first");
+            return;
+        }
+
+        let myCurrentGame = currentGame.get(ctx.guildId);
+
+        let user = ctx.options.getUser('user');
+        let amount = ctx.options.getInteger('balance');
+
+        if (!myCurrentGame.isPlayer(user.id)) {
+            ctx.reply(`Sorry, but ${userMention(user.id)} is not a player in this round, they need to join in with \`/poker_join\``);
+            return;
+        }
+
+        if (amount >= 0) myCurrentGame.playerMap.get(ctx.user.id).balance = amount;
+        else {
+            ctx.reply('That amount is not valid it must be >= 0');
+            return;
+        }
+
+        ctx.reply(`${userMention(user.id)}, you're balance is now ${amount}`);
+    }),
+
     new DiscordCommand('poker_fold', ctx => { 
         if (!currentGame.has(ctx.guildId)) {
             ctx.reply("You need to create a new game first");
@@ -642,6 +674,32 @@ const funcDefs = [
         myCurrentGame.fold(ctx.user.id);
 
         let result = `You've folded!`;
+
+        if (myCurrentGame.playerInCount() == 1) {
+            let remPlayers = myCurrentGame.getPlayersIn();
+            result += `\n${remPlayers[0].nickname} is the only player remaining!\nThey won ${myCurrentGame.pot}\nThe round is over, you can use \`/poker_start\` to start the next round.`;
+            myCurrentGame.roundState = 4;
+            myCurrentGame.nextPhase();
+        }
+
+        ctx.reply(result);
+    }),
+
+    new DiscordCommand('poker_leave', ctx => { 
+        if (!currentGame.has(ctx.guildId)) {
+            ctx.reply("You need to create a new game first");
+            return;
+        }
+        let myCurrentGame = currentGame.get(ctx.guildId);
+
+        if (!myCurrentGame.isPlayer(ctx.user.id)) {
+            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
+            return;
+        }
+
+        myCurrentGame.dropPlayer(ctx.user.id);
+
+        let result = `You've left the current game!`;
 
         if (myCurrentGame.playerInCount() == 1) {
             let remPlayers = myCurrentGame.getPlayersIn();
