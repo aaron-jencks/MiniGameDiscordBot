@@ -88,7 +88,7 @@ class TexasHoldEmBoard {
         return result;
     }
 
-    buyIn(player, nickname, amt=5000) {
+    buyIn(player, nickname, userObj, amt=5000) {
         if (!this.players.includes(player)) {
             if (!this.playerMap.has(player)) {
 
@@ -101,6 +101,7 @@ class TexasHoldEmBoard {
                     'currentBet': 0,
                     'nickname': nickname,
                     'folded': false,
+                    'discordObj': userObj
                 });
             }
     
@@ -122,7 +123,8 @@ class TexasHoldEmBoard {
             'needsBet': true,
             'currentBet': 0,
             'nickname': playerMap.get(player).nickname,
-            'folded': this.playerMap.get(player).folded
+            'folded': this.playerMap.get(player).folded,
+            'discordObj': this.playerMap.get(player).discordObj
         });
     }
 
@@ -464,6 +466,50 @@ const funcDefs = [
         let myCurrentGame = currentGame.get(ctx.guildId);
 
         myCurrentGame.startRound();
+
+        myCurrentGame.players.forEach(p => {
+            let tplayer = myCurrentGame.playerMap.get(p)
+
+            let hand = []
+            let card_width = -1;
+            let card_height = -1;
+            let first = true;
+
+            tplayer.hand.cards.forEach(c => {
+                let lines = c.display().split('\n');
+                if (first) {
+                    first = false;
+                    card_width = lines[0].length;
+                    card_height = lines.length;
+                }
+                hand.push(lines);
+            });
+            if (first) {
+                card_width = 7;
+                card_height = 7;
+            }
+
+            let topBottomBorder = "";
+            for (let i = 0; i < (card_width * 2); i++) {
+                topBottomBorder += "\u2500";
+            }
+
+            let result = "```\nYour Hand:\n";
+            result += "\u250C" + topBottomBorder + "\u2510\n";
+            for (let r = 0; r < card_height; r++) {
+                result += "\u2502";
+
+                hand.forEach(c => {
+                    result += c[r];
+                });
+
+                result += "\u2502\n";
+            }
+            result += "\u2514" + topBottomBorder + "\u2518```";
+
+            tplayer.discordObj.send(result);
+        });
+
         ctx.reply(`Starting round with ${myCurrentGame.players.length} player(s)\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!`);
     }),
 
@@ -474,7 +520,7 @@ const funcDefs = [
         }
         let myCurrentGame = currentGame.get(ctx.guildId);
 
-        myCurrentGame.buyIn(ctx.user.id, ctx.user.username);
+        myCurrentGame.buyIn(ctx.user.id, ctx.user.username, ctx.user);
         ctx.reply(`You've joined the current game`);
     }),
 
