@@ -1,5 +1,5 @@
 function combinations(str, len=5) {
-    console.log(str.length);
+    // console.log(str.length);
     var fn = function(active, rest, a) {
         // console.log(active);
         if (!(active.length || rest.length))

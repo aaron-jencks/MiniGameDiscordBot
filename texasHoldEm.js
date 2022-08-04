@@ -295,6 +295,12 @@ class TexasHoldEmBoard {
                 this.river.addCard(this.deck.draw());
                 // Reset the better
                 this.playerIndex = this.bettingStart.littleBlind;
+
+                // Reset the 
+                this.playerMap.forEach(v => {
+                    v.needsBet = true;
+                    v.currentBet = 0;
+                })
                 this.roundState = 1;
                 break;
 
@@ -316,12 +322,14 @@ class TexasHoldEmBoard {
                     handCombinations.forEach(c => {
                         tempHand.cards = c;
                         let ph = new PokerHand(tempHand.toString());
-                        console.log(ph.describe());
+                        // console.log(ph.describe());
                         if (ph.getScore() < minScore) {
                             minScore = ph.getScore();
                             handType = ph.getRank().replace('_', ' ');
                         }
                     })
+
+                    console.log(`${this.playerMap.get(p).nickname} has a ${handType} with a score of ${minScore}`);
 
                     scoreMap.set(p, {
                         'score': minScore,
