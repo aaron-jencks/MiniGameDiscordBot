@@ -14,6 +14,10 @@ class TexasHoldEmBoard {
         this.bigBlind = bb;
         this.littleBlind = lb;
         this.dealer = dealer;
+        this.bettingStart = {
+            bigBlind : 0,
+            littleBlind : 0
+        };
         this.players = [];
         this.playerMap = new Map();
         this.buy_ins = [];
@@ -123,15 +127,17 @@ class TexasHoldEmBoard {
     }
 
     getCallAmount(player) {
-        return (this.currentBet + ((player === this.bigBlind) ? 100 : 0) + ((player === this.littleBlind) ? 50 : 0)) - this.playerMap.get(player).currentBet;
+        // if (player === this.bigBlind && this.currentBet < 100) return 100 - this.playerMap.get(player).currentBet;
+        // if (player === this.littleBlind && this.currentBet < 50) return 50 - this.playerMap.get(player).currentBet;
+        return this.currentBet - this.playerMap.get(player).currentBet;
     }
 
     isValidBet(player, amt) {
         if (amt <= 0) return true; // all-in/check
         if (this.playerMap.has(player) && this.playerMap.get(player).balance >= amt) {
             if (this.playerMap.get(player).currentBet + amt >= this.currentBet) {
-                if (player === this.bigBlind) return amt >= 100; // blinds
-                if (player === this.littleBlind) return amt >= 50;
+                // if (player === this.bigBlind) return amt >= 100; // blinds
+                // if (player === this.littleBlind) return amt >= 50;
                 return true;
             }
         }
@@ -242,14 +248,23 @@ class TexasHoldEmBoard {
                     this.dealer = this.players[dealerIndex];
                     console.log(`Selected ${this.getDisplayName(this.dealer)}(${dealerIndex}, ${this.dealer}) as the dealer`);
 
-                    if (dealerIndex < this.players.length - 2) {
-                        this.littleBlind = this.players[dealerIndex + 1];
-                        this.bigBlind = this.players[dealerIndex + 2];
-                    }
-                    else {
-                        this.littleBlind = this.players[(dealerIndex < this.players.length - 1) ? dealerIndex + 1 : 0];
-                        this.bigBlind = this.players[(dealerIndex < this.players.length - 1) ? 0 : 1];
-                    }
+                    let smallBlindIndex = (dealerIndex < this.players.length - 1) ? dealerIndex + 1 : 0;
+
+                    // let bigBlindIndex = 0, smallBlindIndex = 0;
+                    // if (dealerIndex < this.players.length - 2) {
+                    //     smallBlindIndex = dealerIndex + 1;
+                    //     bigBlindIndex = dealerIndex + 2;
+                    // }
+                    // else {
+                    //     smallBlindIndex = (dealerIndex < this.players.length - 1) ? dealerIndex + 1 : 0;
+                    //     bigBlindIndex = (dealerIndex < this.players.length - 1) ? 0 : 1;
+                    // }
+
+                    // this.littleBlind = this.players[smallBlindIndex];
+                    // this.bigBlind = this.players[bigBlindIndex];
+
+                    this.bettingStart.littleBlind = smallBlindIndex;
+                    // this.bettingStart.bigBlind = bigBlindIndex;
                 }
 
                 this.roundState += 1;
@@ -259,27 +274,36 @@ class TexasHoldEmBoard {
                 // Betting Phase
                 let prevPlayer = this.playerIndex;
                 this.nextPlayer();
-                if (this.playerIndex <= prevPlayer) {
-                    let moreBetting = false;
-                    this.playerMap.forEach(v => {
-                        if (v.needsBet && !v.folded) moreBetting = true;
-                    })
-                    if (!moreBetting) {
-                        if (this.river.cards.length == 0) this.roundState = 2;
-                        else if (this.river.cards.length < 5) this.roundState = 3;
-                        else this.roundState = 4;
+                console.log(`Moved player to ${this.playerIndex}`);
+
+                let moreBetting = false;
+                this.playerMap.forEach(v => {
+                    if (v.needsBet && !v.folded) {
+                        console.log(`${v.nickname} still needs to bet`);
+                        moreBetting = true;
                     }
+                })
+                if (!moreBetting) {
+                    console.log("Updating roundstate after betting");
+                    if (this.river.cards.length == 0) this.roundState = 2;
+                    else if (this.river.cards.length < 5) this.roundState = 3;
+                    else this.roundState = 4;
                 }
+
                 break;
 
             case 2:
                 // River Phase
+                console.log("Performing the flop");
                 this.river.addCard(this.deck.draw());
                 this.river.addCard(this.deck.draw());
 
             case 3:
                 // additional river phase
+                console.log("Performing additional flops");
                 this.river.addCard(this.deck.draw());
+                // Reset the better
+                this.playerIndex = this.bettingStart.littleBlind;
                 this.roundState = 1;
                 break;
 
@@ -425,7 +449,9 @@ const funcDefs = [
             let result = (amt < 0) ? "You're All-in" : `You bet ${amt}`;
             myCurrentGame.nextPhase();
 
-            if (myCurrentGame.roundState < 4) {
+            console.log(`New game phase is ${myCurrentGame.roundState}`);
+
+            if (myCurrentGame.roundState < 4 && myCurrentGame.roundState > 1) {
                 myCurrentGame.nextPhase();
             }
             else if (myCurrentGame.roundState == 4) {
@@ -467,6 +493,7 @@ const funcDefs = [
             return;
         }
 
+        // console.log(ctx);
         const raiseAmount = ctx.options.getInteger("amount");
 
         amt = myCurrentGame.raise(ctx.user.id, raiseAmount);
@@ -478,7 +505,7 @@ const funcDefs = [
             let result = (amt < 0) ? "You're All-in" : `You bet ${amt}`;
             myCurrentGame.nextPhase();
 
-            if (myCurrentGame.roundState < 4) {
+            if (myCurrentGame.roundState < 4 && myCurrentGame.roundState > 1) {
                 myCurrentGame.nextPhase();
             }
 
