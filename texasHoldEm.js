@@ -142,8 +142,10 @@ class TexasHoldEmBoard {
     }
 
     isValidBet(player, amt) {
+        console.log(`The current bet is ${this.currentBet}`);
         if (amt <= 0) return true; // all-in/check
         if (this.playerMap.has(player) && this.playerMap.get(player).balance >= amt) {
+            console.log(`${this.playerMap.get(player).nickname} has contributed ${this.playerMap.get(player).currentBet + amt} to the pot`);
             if (this.playerMap.get(player).currentBet + amt >= this.currentBet) {
                 // if (player === this.bigBlind) return amt >= 100; // blinds
                 // if (player === this.littleBlind) return amt >= 50;
