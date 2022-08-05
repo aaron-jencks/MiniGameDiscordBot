@@ -12,13 +12,15 @@ const argMap = new Map();
 const testUser = {
     'id': 0,
     'username': 'testUser',
-    'tag': 'testUser#0'
+    'tag': 'testUser#0',
+    send: m => console.log(m)
 }
 
 const testUser2 = {
     'id': 1,
     'username': 'testUser2',
-    'tag': 'testUser2#0'
+    'tag': 'testUser2#0',
+    send: m => console.log(m)
 }
 
 const testContext = {
@@ -98,4 +100,6 @@ poker_funcs.get('poker_set_dealer')(testContext);
 poker_funcs.get('poker_start')(testContext);
 
 poker_funcs.get('poker_raise')(generateNewContext(testUser2));
+
+argMap.set('amount', 1200);
 poker_funcs.get('poker_raise')(testContext);
