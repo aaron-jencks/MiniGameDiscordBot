@@ -1,3 +1,5 @@
+const { concatMultilineStrings } = require('./utils.js');
+
 class Card {
     constructor(value, suit) {
         this.value = value;
@@ -130,7 +132,14 @@ class CardDeck {
     }
 
     display() {
-        return card_back();
+        return (this.cards.length == 0) ? card_back() : concatMultilineStrings(this.cards.map(c => c.display()));
+    }
+
+    displayTopN(n) {
+        let cards = this.cards.map(c => c.display());
+        if (cards.length >= n) return concatMultilineStrings(cards.slice(0, n));
+        while (cards.length < n) cards.push(card_back());
+        return concatMultilineStrings(cards);
     }
 
     toString() {

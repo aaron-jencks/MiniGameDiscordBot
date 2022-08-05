@@ -2,7 +2,7 @@ const { SlashCommandBuilder, userMention } = require('discord.js');
 const { DiscordCommand } = require('./discord-command-templates.js');
 const { CardDeck, card_back } = require("./card_games.js");
 const PokerHand = require("poker-hand-evaluator");
-const { combinations } = require("./utils.js");
+const { combinations, boxString, concatMultilineStrings } = require("./utils.js");
 
 var currentGame = new Map();
 
@@ -57,26 +57,8 @@ class TexasHoldEmBoard {
         }
 
         let result = "```\nRiver:\n";
-        let cardBack = card_back().split('\n');
-        result += "\u250C" + topBottomBorder + "\u2510\n";
-        for (let r = 0; r < card_height; r++) {
-            result += "\u2502";
-
-            river.forEach(c => {
-                result += c[r];
-            });
-
-            if (river.length < 5) {
-                let diff = 5 - river.length;
-                for (let b = 0; b++ < diff;) {
-                    result += cardBack[r];
-                }
-            }
-
-            result += "\u2502\n";
-        }
-        result += "\u2514" + topBottomBorder + "\u2518\n";
-        result += `Current Pot: ${this.pot}\nCurrent Bet to match: ${this.currentBet}\n\nDealer: ${this.getDisplayName(this.dealer)}\n`;
+        result += boxString(this.river.displayTopN(5));
+        result += `\nCurrent Pot: ${this.pot}\nCurrent Bet to match: ${this.currentBet}\n\nDealer: ${this.getDisplayName(this.dealer)}\n`;
         // result += `\nLittle Blind: ${this.getDisplayName(this.littleBlind)}(50)\nBig Blind: ${this.getDisplayName(this.bigBlind)}(100)\n`;
 
         result += '\nCurrent Players:\n';
