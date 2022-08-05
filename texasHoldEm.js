@@ -32,30 +32,6 @@ class TexasHoldEmBoard {
     }
 
     display() {
-        let river = [];
-        let card_width = -1;
-        let card_height = -1;
-        let first = true;
-
-        this.river.cards.forEach(c => {
-            let lines = c.display().split('\n');
-            if (first) {
-                first = false;
-                card_width = lines[0].length;
-                card_height = lines.length;
-            }
-            river.push(lines);
-        });
-        if (first) {
-            card_width = 7;
-            card_height = 7;
-        }
-
-        let topBottomBorder = "";
-        for (let i = 0; i < (card_width * 5); i++) {
-            topBottomBorder += "\u2500";
-        }
-
         let result = "```\nRiver:\n";
         result += boxString(this.river.displayTopN(5));
         result += `\nCurrent Pot: ${this.pot}\nCurrent Bet to match: ${this.currentBet}\n\nDealer: ${this.getDisplayName(this.dealer)}\n`;
@@ -419,6 +395,32 @@ class TexasHoldEmBoard {
     }
 }
 
+function requireGame(ctx) {
+    if (!currentGame.has(ctx.guildId)) {
+        ctx.reply("You need to create a new game first");
+        return false;
+    }
+    return true;
+}
+
+function requireRoundNotStarted(ctx) {
+    if (!requireGame(ctx)) return false;
+    else if (currentGame.get(ctx.guildId).roundState > 0) {
+        ctx.reply('You can\'t do that once the round has started!');
+        return false;
+    }
+    return true;
+}
+
+function requireRoundStarted(ctx) {
+    if (!requireGame(ctx)) return false;
+    else if (currentGame.get(ctx.guildId).roundState == 0) {
+        ctx.reply('You can\'t do that before the round has started!');
+        return false;
+    }
+    return true;
+}
+
 const funcNames = [
     new SlashCommandBuilder().setName('poker_new').setDescription('Creates a new Texas Hold\'em game'),
     new SlashCommandBuilder().setName('poker_start').setDescription('Starts a new Texas Hold\'em game'),
@@ -446,10 +448,8 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_start', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireGame(ctx)) return;
+
         let myCurrentGame = currentGame.get(ctx.guildId);
 
         myCurrentGame.startRound();
@@ -457,42 +457,10 @@ const funcDefs = [
         myCurrentGame.players.forEach(p => {
             let tplayer = myCurrentGame.playerMap.get(p)
 
-            let hand = []
-            let card_width = -1;
-            let card_height = -1;
-            let first = true;
-
-            tplayer.hand.cards.forEach(c => {
-                let lines = c.display().split('\n');
-                if (first) {
-                    first = false;
-                    card_width = lines[0].length;
-                    card_height = lines.length;
-                }
-                hand.push(lines);
-            });
-            if (first) {
-                card_width = 7;
-                card_height = 7;
-            }
-
-            let topBottomBorder = "";
-            for (let i = 0; i < (card_width * 2); i++) {
-                topBottomBorder += "\u2500";
-            }
+            let hand = boxString(tplayer.hand.display());
 
             let result = "```\nYour Hand:\n";
-            result += "\u250C" + topBottomBorder + "\u2510\n";
-            for (let r = 0; r < card_height; r++) {
-                result += "\u2502";
-
-                hand.forEach(c => {
-                    result += c[r];
-                });
-
-                result += "\u2502\n";
-            }
-            result += "\u2514" + topBottomBorder + "\u2518```";
+            result += hand;
 
             tplayer.discordObj.send(result);
         });
@@ -501,10 +469,8 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_join', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireGame(ctx)) return;
+
         let myCurrentGame = currentGame.get(ctx.guildId);
 
         myCurrentGame.buyIn(ctx.user.id, ctx.user.username, ctx.user);
@@ -512,17 +478,9 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_set_dealer', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireRoundNotStarted(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
-
-        if (myCurrentGame.roundState > 0) {
-            ctx.reply("You can't specify the dealer midway through a round!");
-            return;
-        }
 
         const newDealer = ctx.options.getUser("dealer");
 
@@ -531,17 +489,9 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_call', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireRoundStarted(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
-
-        if (myCurrentGame.roundState == 0) {
-            ctx.reply('The round hasn\'t started yet!');
-            return;
-        }
 
         if (!myCurrentGame.isPlayer(ctx.user.id)) {
             ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
@@ -589,17 +539,9 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_check', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireRoundStarted(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
-
-        if (myCurrentGame.roundState == 0) {
-            ctx.reply('The round hasn\'t started yet!');
-            return;
-        }
 
         if (!myCurrentGame.isPlayer(ctx.user.id)) {
             ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
@@ -648,17 +590,9 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_raise', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireRoundStarted(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
-
-        if (myCurrentGame.roundState == 0) {
-            ctx.reply('The round hasn\'t started yet!');
-            return;
-        }
 
         if (!myCurrentGame.isPlayer(ctx.user.id)) {
             ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
@@ -693,10 +627,7 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_call_amount', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireGame(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
@@ -717,10 +648,7 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_balance', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireGame(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
@@ -734,10 +662,7 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_set_balance', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireGame(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
@@ -759,10 +684,8 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_fold', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireGame(ctx)) return;
+
         let myCurrentGame = currentGame.get(ctx.guildId);
 
         if (myCurrentGame.roundState == 0) {
@@ -794,10 +717,8 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_leave', ctx => { 
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to create a new game first");
-            return;
-        }
+        if (!requireGame(ctx)) return;
+
         let myCurrentGame = currentGame.get(ctx.guildId);
 
         if (!myCurrentGame.isPlayer(ctx.user.id)) {
