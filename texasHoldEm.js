@@ -446,6 +446,49 @@ function requireCurrentBetter(ctx) {
     return true;
 }
 
+function checkIfRoundOver(ctx) {
+
+}
+
+function handleBetting(ctx, prefix) {
+    let result = prefix;
+    myCurrentGame.nextPhase();
+
+    if (myCurrentGame.playerInCount() == 1) {
+        let remPlayers = myCurrentGame.getPlayersIn();
+        result += `\n${myCurrentGame.display()}\n${remPlayers[0].nickname} is the only player remaining!\nThey won ${myCurrentGame.pot}\nThe round is over, you can use \`/poker_start\` to start the next round.`;
+        myCurrentGame.roundState = 4;
+        myCurrentGame.nextPhase();
+        ctx.reply(result);
+        return;
+    }
+
+    console.log(`New game phase is ${myCurrentGame.roundState}`);
+
+    if (myCurrentGame.roundState < 4 && myCurrentGame.roundState > 1) {
+        myCurrentGame.nextPhase();
+    }
+    else if (myCurrentGame.roundState == 4) {
+        result += `\n${myCurrentGame.display()}\n`;
+
+        myCurrentGame.nextPhase();
+
+        myCurrentGame.lastRound.winners.forEach(w => {
+            result += `${userMention(w.player)} wins with a ${w.hand} for ${myCurrentGame.lastRound.amount}!\n`;
+        })
+
+        result += 'The round is over! use \`/poker_start\` to start the next round!';
+
+        ctx.reply(result);
+        return;
+    }
+
+    result += ((myCurrentGame.roundState == 1) ? `\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!` : '');
+
+    ctx.reply(result);
+    return;
+}
+
 const funcNames = [
     new SlashCommandBuilder().setName('poker_new').setDescription('Creates a new Texas Hold\'em game'),
     new SlashCommandBuilder().setName('poker_start').setDescription('Starts a new Texas Hold\'em game'),
@@ -526,32 +569,7 @@ const funcDefs = [
             return;
         }
         else {
-            let result = (amt < 0) ? "You're All-in" : `You bet ${amt}`;
-            myCurrentGame.nextPhase();
-
-            console.log(`New game phase is ${myCurrentGame.roundState}`);
-
-            if (myCurrentGame.roundState < 4 && myCurrentGame.roundState > 1) {
-                myCurrentGame.nextPhase();
-            }
-            else if (myCurrentGame.roundState == 4) {
-                result += `\n${myCurrentGame.display()}\n`;
-
-                myCurrentGame.nextPhase();
-
-                myCurrentGame.lastRound.winners.forEach(w => {
-                    result += `${userMention(w.player)} wins with a ${w.hand} for ${myCurrentGame.lastRound.amount}!\n`;
-                })
-
-                result += 'The round is over! use \`/poker_start\` to start the next round!';
-
-                ctx.reply(result);
-                return;
-            }
-
-            result += ((myCurrentGame.roundState == 1) ? `\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!` : '');
-
-            ctx.reply(result);
+            handleBetting(ctx, (amt < 0) ? "You're All-in" : `You bet ${amt}`);
             return;
         }
     }),
@@ -571,32 +589,7 @@ const funcDefs = [
 
         amt = myCurrentGame.call(ctx.user.id);
 
-        let result = 'You checked!\n';
-        myCurrentGame.nextPhase();
-
-        console.log(`New game phase is ${myCurrentGame.roundState}`);
-
-        if (myCurrentGame.roundState < 4 && myCurrentGame.roundState > 1) {
-            myCurrentGame.nextPhase();
-        }
-        else if (myCurrentGame.roundState == 4) {
-            result += `\n${myCurrentGame.display()}\n`;
-
-            myCurrentGame.nextPhase();
-
-            myCurrentGame.lastRound.winners.forEach(w => {
-                result += `${userMention(w.player)} wins with a ${w.hand} for ${myCurrentGame.lastRound.amount}!\n`;
-            })
-
-            result += 'The round is over! use \`/poker_start\` to start the next round!';
-
-            ctx.reply(result);
-            return;
-        }
-
-        result += ((myCurrentGame.roundState == 1) ? `\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!` : '');
-
-        ctx.reply(result);
+        handleBetting(ctx, 'You checked!');
         return;
     }),
 
@@ -616,16 +609,7 @@ const funcDefs = [
             return;
         }
         else {
-            let result = (amt < 0) ? "You're All-in" : `You bet ${amt}`;
-            myCurrentGame.nextPhase();
-
-            if (myCurrentGame.roundState < 4 && myCurrentGame.roundState > 1) {
-                myCurrentGame.nextPhase();
-            }
-
-            result += ((myCurrentGame.roundState == 1) ? `\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!` : '');
-
-            ctx.reply(result);
+            handleBetting(ctx, (amt < 0) ? "You're All-in" : `You bet ${amt}`);
             return;
         }
     }),
@@ -690,16 +674,7 @@ const funcDefs = [
 
         myCurrentGame.fold(ctx.user.id);
 
-        let result = `You've folded!`;
-
-        if (myCurrentGame.playerInCount() == 1) {
-            let remPlayers = myCurrentGame.getPlayersIn();
-            result += `\n${remPlayers[0].nickname} is the only player remaining!\nThey won ${myCurrentGame.pot}\nThe round is over, you can use \`/poker_start\` to start the next round.`;
-            myCurrentGame.roundState = 4;
-            myCurrentGame.nextPhase();
-        }
-
-        ctx.reply(result);
+        handleBetting(ctx, "You've folded!");
     }),
 
     new DiscordCommand('poker_leave', ctx => { 
@@ -711,16 +686,7 @@ const funcDefs = [
 
         myCurrentGame.dropPlayer(ctx.user.id);
 
-        let result = `You've left the current game!`;
-
-        if (myCurrentGame.playerInCount() == 1) {
-            let remPlayers = myCurrentGame.getPlayersIn();
-            result += `\n${remPlayers[0].nickname} is the only player remaining!\nThey won ${myCurrentGame.pot}\nThe round is over, you can use \`/poker_start\` to start the next round.`;
-            myCurrentGame.roundState = 4;
-            myCurrentGame.nextPhase();
-        }
-
-        ctx.reply(result);
+        handleBetting(ctx, "You've left the current game!");
     }),
 ]
 
