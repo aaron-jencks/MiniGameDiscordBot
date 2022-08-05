@@ -90,3 +90,12 @@ poker_funcs.get('poker_raise')(generateNewContext(testUser2));
 poker_funcs.get('poker_fold')(testContext);
 
 // Winner announced
+
+// dual raise round
+
+argMap.set('dealer', testUser);
+poker_funcs.get('poker_dealer_set')(testContext);
+poker_funcs.get('poker_start')(testContext);
+
+poker_funcs.get('poker_raise')(generateNewContext(testUser2));
+poker_funcs.get('poker_raise')(testContext);
