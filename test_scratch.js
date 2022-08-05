@@ -51,7 +51,7 @@ poker_funcs.get('poker_join')(testContext);
 poker_funcs.get('poker_join')(generateNewContext(testUser2));
 
 argMap.set('dealer', testUser);
-poker_funcs.get('poker_dealer_set')(testContext);
+poker_funcs.get('poker_set_dealer')(testContext);
 
 poker_funcs.get('poker_start')(testContext);
 
@@ -82,7 +82,7 @@ poker_funcs.get('poker_call')(testContext);
 // Folding round
 
 argMap.set('dealer', testUser);
-poker_funcs.get('poker_dealer_set')(testContext);
+poker_funcs.get('poker_set_dealer')(testContext);
 poker_funcs.get('poker_start')(testContext);
 
 // argMap.set('amount', 600); // Still the 600 from last time
@@ -94,7 +94,7 @@ poker_funcs.get('poker_fold')(testContext);
 // dual raise round
 
 argMap.set('dealer', testUser);
-poker_funcs.get('poker_dealer_set')(testContext);
+poker_funcs.get('poker_set_dealer')(testContext);
 poker_funcs.get('poker_start')(testContext);
 
 poker_funcs.get('poker_raise')(generateNewContext(testUser2));
