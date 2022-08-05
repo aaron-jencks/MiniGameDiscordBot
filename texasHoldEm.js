@@ -421,6 +421,31 @@ function requireRoundStarted(ctx) {
     return true;
 }
 
+function requirePlayer(ctx) {
+    if(!requireGame(ctx)) return false;
+
+    let myCurrentGame = currentGame.get(ctx.guildId);
+
+    if (!myCurrentGame.isPlayer(ctx.user.id)) {
+        ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
+        return false;
+    }
+
+    return true;
+}
+
+function requireCurrentBetter(ctx) {
+    if (!requirePlayer(ctx)) return false;
+    let myCurrentGame = currentGame.get(ctx.guildId);
+
+    if (myCurrentGame.getCurrentBetter() !== ctx.user.id) {
+        ctx.reply("You're not up to bet! Wait your turn!");
+        return false;
+    }
+
+    return true;
+}
+
 const funcNames = [
     new SlashCommandBuilder().setName('poker_new').setDescription('Creates a new Texas Hold\'em game'),
     new SlashCommandBuilder().setName('poker_start').setDescription('Starts a new Texas Hold\'em game'),
@@ -493,14 +518,7 @@ const funcDefs = [
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
-        if (!myCurrentGame.isPlayer(ctx.user.id)) {
-            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
-            return;
-        }
-        else if (myCurrentGame.getCurrentBetter() !== ctx.user.id) {
-            ctx.reply("You're not up to bet! Wait your turn!");
-            return;
-        }
+        if (!requireCurrentBetter(ctx)) return;
 
         amt = myCurrentGame.call(ctx.user.id);
         if (amt == null) {
@@ -543,14 +561,7 @@ const funcDefs = [
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
-        if (!myCurrentGame.isPlayer(ctx.user.id)) {
-            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
-            return;
-        }
-        else if (myCurrentGame.getCurrentBetter() !== ctx.user.id) {
-            ctx.reply("You're not up to bet! Wait your turn!");
-            return;
-        }
+        if (!requireCurrentBetter(ctx)) return;
 
         amt = myCurrentGame.getCallAmount(ctx.user.id);
         if (amt != 0) {
@@ -594,14 +605,7 @@ const funcDefs = [
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
-        if (!myCurrentGame.isPlayer(ctx.user.id)) {
-            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
-            return;
-        }
-        else if (myCurrentGame.getCurrentBetter() !== ctx.user.id) {
-            ctx.reply("You're not up to bet! Wait your turn!");
-            return;
-        }
+        if (!requireCurrentBetter(ctx)) return;
 
         // console.log(ctx);
         const raiseAmount = ctx.options.getInteger("amount");
@@ -631,10 +635,7 @@ const funcDefs = [
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
-        if (!myCurrentGame.isPlayer(ctx.user.id)) {
-            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
-            return;
-        }
+        if (!requirePlayer(ctx)) return;
 
         amt = myCurrentGame.getCallAmount(ctx.user.id);
         if (amt < 0) {
@@ -652,10 +653,7 @@ const funcDefs = [
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
-        if (!myCurrentGame.isPlayer(ctx.user.id)) {
-            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
-            return;
-        }
+        if (!requirePlayer(ctx)) return;
 
         amt = myCurrentGame.playerMap.get(ctx.user.id).balance;
         ctx.reply(`You're balance is ${amt}`);
@@ -684,23 +682,11 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_fold', ctx => { 
-        if (!requireGame(ctx)) return;
+        if (!requireRoundStarted(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
-        if (myCurrentGame.roundState == 0) {
-            ctx.reply('The round hasn\'t started yet!');
-            return;
-        }
-
-        if (!myCurrentGame.isPlayer(ctx.user.id)) {
-            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
-            return;
-        }
-        else if (myCurrentGame.getCurrentBetter() !== ctx.user.id) {
-            ctx.reply("You're not up to bet! Wait your turn!");
-            return;
-        }
+        if(!requireCurrentBetter(ctx)) return;
 
         myCurrentGame.fold(ctx.user.id);
 
@@ -721,10 +707,7 @@ const funcDefs = [
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
-        if (!myCurrentGame.isPlayer(ctx.user.id)) {
-            ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
-            return;
-        }
+        if (!requirePlayer(ctx)) return;
 
         myCurrentGame.dropPlayer(ctx.user.id);
 
