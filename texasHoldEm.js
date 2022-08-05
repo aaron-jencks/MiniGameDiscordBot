@@ -76,12 +76,13 @@ class TexasHoldEmBoard {
             result += "\u2502\n";
         }
         result += "\u2514" + topBottomBorder + "\u2518\n";
-        result += `Current Pot: ${this.pot}\n\nDealer: ${this.getDisplayName(this.dealer)}\n`;
+        result += `Current Pot: ${this.pot}\nCurrent Bet to match: ${this.currentBet}\n\nDealer: ${this.getDisplayName(this.dealer)}\n`;
         // result += `\nLittle Blind: ${this.getDisplayName(this.littleBlind)}(50)\nBig Blind: ${this.getDisplayName(this.bigBlind)}(100)\n`;
 
         result += '\nCurrent Players:\n';
         this.players.forEach(p => {
-            result += `${this.players[this.playerIndex] == p ? '\u21d2 ' : '' }${p == this.dealer ? 'D ' : ''}${this.getDisplayName(p)} ${this.playerMap.get(p).folded ? 'FOLD' : ''}\n`;
+            let tplayer = this.playerMap.get(p);
+            result += `${this.players[this.playerIndex] == p ? '\u21d2 ' : '' }${p == this.dealer ? 'D ' : ''}${this.getDisplayName(p)} ${tplayer.folded ? 'FOLD' : `${tplayer.currentBet} of ${tplayer.balance}`}\n`;
         })
 
         result += '```';
@@ -101,7 +102,8 @@ class TexasHoldEmBoard {
                     'currentBet': 0,
                     'nickname': nickname,
                     'folded': false,
-                    'discordObj': userObj
+                    'discordObj': userObj,
+                    'roundBet': 0
                 });
             }
     
@@ -124,7 +126,8 @@ class TexasHoldEmBoard {
             'currentBet': 0,
             'nickname': playerMap.get(player).nickname,
             'folded': this.playerMap.get(player).folded,
-            'discordObj': this.playerMap.get(player).discordObj
+            'discordObj': this.playerMap.get(player).discordObj,
+            'roundBet': this.playerMap.get(player).roundBet
         });
     }
 
@@ -553,6 +556,11 @@ const funcDefs = [
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
+        if (myCurrentGame.roundState == 0) {
+            ctx.reply('The round hasn\'t started yet!');
+            return;
+        }
+
         if (!myCurrentGame.isPlayer(ctx.user.id)) {
             ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
             return;
@@ -606,6 +614,11 @@ const funcDefs = [
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
+        if (myCurrentGame.roundState == 0) {
+            ctx.reply('The round hasn\'t started yet!');
+            return;
+        }
+
         if (!myCurrentGame.isPlayer(ctx.user.id)) {
             ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
             return;
@@ -621,7 +634,35 @@ const funcDefs = [
             return;
         }
 
-        myCurrentGame.call(ctx.user.id);
+        amt = myCurrentGame.call(ctx.user.id);
+
+        let result = 'You checked!\n';
+        myCurrentGame.nextPhase();
+
+        console.log(`New game phase is ${myCurrentGame.roundState}`);
+
+        if (myCurrentGame.roundState < 4 && myCurrentGame.roundState > 1) {
+            myCurrentGame.nextPhase();
+        }
+        else if (myCurrentGame.roundState == 4) {
+            result += `\n${myCurrentGame.display()}\n`;
+
+            myCurrentGame.nextPhase();
+
+            myCurrentGame.lastRound.winners.forEach(w => {
+                result += `${userMention(w.player)} wins with a ${w.hand} for ${myCurrentGame.lastRound.amount}!\n`;
+            })
+
+            result += 'The round is over! use \`/poker_start\` to start the next round!';
+
+            ctx.reply(result);
+            return;
+        }
+
+        result += ((myCurrentGame.roundState == 1) ? `\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!` : '');
+
+        ctx.reply(result);
+        return;
     }),
 
     new DiscordCommand('poker_raise', ctx => { 
@@ -631,6 +672,11 @@ const funcDefs = [
         }
 
         let myCurrentGame = currentGame.get(ctx.guildId);
+
+        if (myCurrentGame.roundState == 0) {
+            ctx.reply('The round hasn\'t started yet!');
+            return;
+        }
 
         if (!myCurrentGame.isPlayer(ctx.user.id)) {
             ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");
@@ -646,7 +692,7 @@ const funcDefs = [
 
         amt = myCurrentGame.raise(ctx.user.id, raiseAmount);
         if (amt == null) {
-            ctx.reply("Sorry, but you can't raise right now");
+            ctx.reply((amt < myCurrentGame.currentBet) ? `You need to raise to at least ${myCurrentGame.currentBet}` : "Sorry, but you can't raise right now");
             return;
         }
         else {
@@ -736,6 +782,11 @@ const funcDefs = [
             return;
         }
         let myCurrentGame = currentGame.get(ctx.guildId);
+
+        if (myCurrentGame.roundState == 0) {
+            ctx.reply('The round hasn\'t started yet!');
+            return;
+        }
 
         if (!myCurrentGame.isPlayer(ctx.user.id)) {
             ctx.reply("Sorry, but you're not a player in this round, you need to join in with `/poker_join`");

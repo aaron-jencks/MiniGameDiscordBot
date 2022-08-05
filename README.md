@@ -31,7 +31,7 @@ Allows you to play texas hold em in your server. This one is a bit involved, you
 - `poker_start` Starts the current poker round for the current game, all players waiting to join in are merged into the current players, dealer is assigned, and betting begins.
 - `poker_call`  Used by players to call on their turn, using when the current bet is 0 is equivalent to using `poker_check`
 - `poker_check` Used by players to check on their turn, fails when the current bet is > 0.
-- `poker_raise` Raises the pot to the given amount. Used by players to raise on their turn.
+- `poker_raise` Raises the bet to the given amount. Used by players to raise on their turn.
 - `poker_fold` Used by players to fold out of the current round.
 - `poker_set_dealer` Can be used before `poker_start` to specify the dealer for the next round
 - `poker_pot` Returns the pot balance
