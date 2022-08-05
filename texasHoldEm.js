@@ -2,7 +2,7 @@ const { SlashCommandBuilder, userMention } = require('discord.js');
 const { DiscordCommand } = require('./discord-command-templates.js');
 const { CardDeck } = require("./card_games.js");
 const PokerHand = require("poker-hand-evaluator");
-const { combinations, boxString } = require("./utils.js");
+const { combinations, boxString, stringAlignmentEnum, concatMultilineStrings } = require("./utils.js");
 
 var currentGame = new Map();
 
@@ -450,6 +450,8 @@ function requireCurrentBetter(ctx) {
 
 function handleBetting(ctx, prefix) {
     let result = prefix;
+    let myCurrentGame = currentGame.get(ctx.guildId);
+
     myCurrentGame.nextPhase();
 
     if (myCurrentGame.playerInCount() == 1) {
@@ -467,12 +469,18 @@ function handleBetting(ctx, prefix) {
         myCurrentGame.nextPhase();
     }
     else if (myCurrentGame.roundState == 4) {
-        result += `\n${myCurrentGame.display()}\n`;
+        result += `\n${myCurrentGame.display()}\n\`\`\`\nPlayer Hands:\n`;
+
+        myCurrentGame.players.forEach(p => {
+            let tplayer = myCurrentGame.playerMap.get(p);
+            let hand = tplayer.hand.display();
+            result += boxString(concatMultilineStrings([tplayer.nickname, hand], stringAlignmentEnum.LEFT, stringAlignmentEnum.CENTER)) + '\n';
+        })
 
         myCurrentGame.nextPhase();
 
         myCurrentGame.lastRound.winners.forEach(w => {
-            result += `${userMention(w.player)} wins with a ${w.hand} for ${myCurrentGame.lastRound.amount}!\n`;
+            result += `${userMention(w.player)} wins with a ${w.hand} for ${myCurrentGame.lastRound.amount}!\n\`\`\`\n`;
         })
 
         result += 'The round is over! use \`/poker_start\` to start the next round!';
