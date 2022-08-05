@@ -1,13 +1,13 @@
 const { SlashCommandBuilder, userMention } = require('discord.js');
 const { DiscordCommand } = require('./discord-command-templates.js');
-const { CardDeck, card_back } = require("./card_games.js");
+const { CardDeck } = require("./card_games.js");
 const PokerHand = require("poker-hand-evaluator");
-const { combinations, boxString, concatMultilineStrings } = require("./utils.js");
+const { combinations, boxString } = require("./utils.js");
 
 var currentGame = new Map();
 
 class TexasHoldEmBoard {
-    constructor(bb, lb, dealer) {
+    constructor(host, bb, lb, dealer) {
         this.river = new CardDeck(false, false);
         this.deck = new CardDeck(false, true);
         this.pot = 0;
@@ -15,6 +15,8 @@ class TexasHoldEmBoard {
         this.littleBlind = lb;
         this.dealer = dealer;
         this.dealerSet = false;
+        this.host = host.id;
+        this.hostName = host.username;
         this.bettingStart = {
             bigBlind : 0,
             littleBlind : 0
@@ -32,7 +34,7 @@ class TexasHoldEmBoard {
     }
 
     display() {
-        let result = "```\nRiver:\n";
+        let result = "```\nHost: " + this.hostName + "\nRiver:\n";
         result += boxString(this.river.displayTopN(5));
         result += `\nCurrent Pot: ${this.pot}\nCurrent Bet to match: ${this.currentBet}\n\nDealer: ${this.getDisplayName(this.dealer)}\n`;
         // result += `\nLittle Blind: ${this.getDisplayName(this.littleBlind)}(50)\nBig Blind: ${this.getDisplayName(this.bigBlind)}(100)\n`;
@@ -446,10 +448,6 @@ function requireCurrentBetter(ctx) {
     return true;
 }
 
-function checkIfRoundOver(ctx) {
-
-}
-
 function handleBetting(ctx, prefix) {
     let result = prefix;
     myCurrentGame.nextPhase();
@@ -511,7 +509,7 @@ const funcNames = [
 
 const funcDefs = [
     new DiscordCommand('poker_new', ctx => { 
-        currentGame.set(ctx.guildId, new TexasHoldEmBoard('', '', ''));
+        currentGame.set(ctx.guildId, new TexasHoldEmBoard(ctx.user, '', '', ''));
         ctx.reply("Created a new Texas Hold'em Game!\n"+currentGame.get(ctx.guildId).display());
     }),
 
