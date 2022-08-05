@@ -448,6 +448,16 @@ function requireCurrentBetter(ctx) {
     return true;
 }
 
+function requireHost(ctx) {
+    if (!requireGame(ctx)) return false;
+    let myCurrentGame = currentGame.get(ctx.guildId);
+    if (myCurrentGame.host !== ctx.user.id) {
+        ctx.reply('Only the host of the game has permission to perform that action!');
+        return false;
+    }
+    return true;
+}
+
 function handleBetting(ctx, prefix) {
     let result = prefix;
     let myCurrentGame = currentGame.get(ctx.guildId);
@@ -522,7 +532,7 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_start', ctx => { 
-        if (!requireGame(ctx)) return;
+        if (!requireHost(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
@@ -552,6 +562,7 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_set_dealer', ctx => { 
+        if (!requireHost(ctx)) return;
         if (!requireRoundNotStarted(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
@@ -650,7 +661,7 @@ const funcDefs = [
     }),
 
     new DiscordCommand('poker_set_balance', ctx => { 
-        if (!requireGame(ctx)) return;
+        if (!requireHost(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
