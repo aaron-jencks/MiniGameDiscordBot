@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { DiscordCommand } = require('./discord-command-templates.js');
+const { boxString } = require('./utils.js');
 
 var currentGame = new Map();
 
@@ -174,18 +175,15 @@ class YahtzeeBoard {
     }
 
     display() {
-        var result = "";
-        
-    }
-
-    place(r, c) {
-        if (this.isValid(r, c)) this.board[r][c] = this.player ? 1 : 2;
-    }
-
-    togglePlayer() { this.player = !this.player; }
-
-    isValid(r, c) {
-        return r >= 0 && r < 3 && c >= 0 && c < 3 && this.board[r][c] == 0;
+        let entries = ["Entries:"]
+        for ([ename, evalue] of Object.entries(this.state)) {
+            entries.push(evalue.display());
+        }
+        let score = this.calculateUpper();
+        score += this.state.ThreeOfAKind.entryScore + this.state.FourOfAKind.entryScore + this.state.FullHouse.entryScore + 
+            this.state.SmallStraight.entryScore  + this.state.LargeStraight.entryScore + this.state.Yahtzee.entryScore + this.state.Chance.entryScore;
+        entries.push(`Current Score: ${score}`);
+        return "```\n" + boxString(entries.join('\n')) + "\n```"; 
     }
 
     isOver() {
@@ -207,28 +205,11 @@ class YahtzeeBoard {
             (this.board[2][0] != 0 && this.board[2][0] == this.board[1][1] && this.board[1][1] == this.board[0][2]) ||               // Diagonal 2
             !hasEmpty;                                                                                                               // Cat's game
     }
-
-    winner() {
-        if (this.isOver()) {
-            for(var i = 0; i < 3; i++) {
-                if (this.board[0][i] != 0 && this.board[0][i] == this.board[1][i] && this.board[0][i] == this.board[2][i]) return this.board[0][i];  // Vertical checks
-                if (this.board[i][0] != 0 && this.board[i][0] == this.board[i][1] && this.board[i][0] == this.board[i][2]) return this.board[i][0];  // Horizontal checks
-            }
-
-            if (this.board[0][0] != 0 && this.board[0][0] == this.board[1][1] && this.board[0][0] == this.board[2][2]) return this.board[0][0];      // Diagonal 1
-            if (this.board[2][0] != 0 && this.board[2][0] == this.board[1][1] && this.board[1][1] == this.board[0][2]) return this.board[2][0];      // Diagonal 2
-    
-            return 0;                                                                                                                                // Cat's game
-        }
-        return -1;
-    }
 }
 
 const funcNames = [
-    new SlashCommandBuilder().setName('ttt_new').setDescription('Starts a new tic tac toe game'),
-	new SlashCommandBuilder().setName('ttt_play').setDescription('Plays at a position in a tic tac toe game, syntax: ttt.play row column')
-        .addIntegerOption(option => option.setName("row").setDescription("The row to play on").setRequired(true))
-        .addIntegerOption(option => option.setName("column").setDescription("The column to play on").setRequired(true)),
+    new SlashCommandBuilder().setName('yaht_new').setDescription('Starts a new tic tac toe game'),
+	new SlashCommandBuilder().setName('yaht_roll').setDescription('Plays at a position in a tic tac toe game, syntax: ttt.play row column'),
     new SlashCommandBuilder().setName('ttt_board').setDescription('Displays the current game board'),
 ]
 
