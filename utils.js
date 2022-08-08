@@ -94,7 +94,7 @@ function padStringVertical(s, n, align=stringAlignmentEnum.TOP) {
     return result.join('\n');
 }
 
-function concatMultilineStrings(sarr, align=stringAlignmentEnum.LEFT, valign=stringAlignmentEnum.CENTER, fillChar=' ') {
+function concatMultilineStrings(sarr, separator='', align=stringAlignmentEnum.LEFT, valign=stringAlignmentEnum.CENTER, fillChar=' ') {
     let lines = sarr.map(s => s.split('\n'));
 
     let maxVertLength = 0;
@@ -106,8 +106,7 @@ function concatMultilineStrings(sarr, align=stringAlignmentEnum.LEFT, valign=str
 
     let resultLines = [];
     for (let r = 0; r < maxVertLength; r++) {
-        let resultLine = '';
-        lines.forEach(l => resultLine += l[r]);
+        let resultLine = lines.map(l => l[r]).join(separator);
         resultLines.push(resultLine);
     }
 
