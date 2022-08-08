@@ -86,7 +86,7 @@ class StaticScoredYahtzeeEntry extends YahtzeeEntry {
     }
 
     score(dice) {
-        return this.resultScore;
+        return this.matches(dice) ? this.resultScore : 0;
     }
 }
 
@@ -281,6 +281,59 @@ class YahtzeeBoard {
     }
 }
 
+function checkMultipleYahtzee(game, dice) {
+    let nums = dice.map(d => d.value);
+    if (game.state.Yahtzee.matches(nums)) {
+        let amt = game.state.Yahtzee.score(nums)
+        game.state.Yahtzee.entryScore += amt;
+        return amt > 0;
+    }
+    return false;
+}
+
+function isJoker(game, dice) {
+    let nums = dice.map(d => d.value);
+    if (game.state.Yahtzee.matches(nums)) {
+        return true;
+    }
+    return false;
+}
+
+function correspondingUpperUsed(game, dice) {
+    if (isJoker(game, dice)) {
+        let n = dice.map(d => d.value)[0];
+        switch(n) {
+            case 1:
+                return game.state.Aces.used;
+            case 2:
+                return game.state.Twos.used;
+            case 3:
+                return game.state.Threes.used;
+            case 4:
+                return game.state.Fours.used;
+            case 5:
+                return game.state.Fives.used;
+            case 6:
+                return game.state.Sixes.used;
+        }
+    }
+    return false;
+}
+
+function getYahtzeeValue(game, dice) {
+    if (isJoker(game, dice)) {
+        return dice.map(d => d.value)[0];
+    }
+    return 0;
+}
+
+function scoreRoll(entry, dice, game) {
+    let nums = dice.map(d => d.value);
+    entry.entryScore = entry.score(nums);
+    entry.entryDice = nums;
+    entry.used = true;
+}
+
 function requireGame(ctx) {
     if (!currentGame.has(ctx.user.id)) {
         ctx.reply("You need to start a new game with 'yaht_new' first!");
@@ -302,13 +355,24 @@ function requireRoll(ctx) {
 const funcNames = [
     new SlashCommandBuilder().setName('yaht_new').setDescription('Starts a new Yahtzee game for the current user'),
 	new SlashCommandBuilder().setName('yaht_roll').setDescription('Rolls the dice for the current Yahtzee game'),
-    new SlashCommandBuilder().setName('yaht_score').setDescription('Decides how to score the current Yahtzee roll')
-        .addIntegerOption(option => option.setName('entry').setDescription('The entry to score the roll for')),
     new SlashCommandBuilder().setName('yaht_hold').setDescription('Holds the selected dice for rerolling')
         .addIntegerOption(option => option.setName('die').setDescription('Dice to hold (0-4)')),
     new SlashCommandBuilder().setName('yaht_release').setDescription('Releases the selected dice for rerolling')
         .addIntegerOption(option => option.setName('die').setDescription('Dice to hold (0-4)')),
     new SlashCommandBuilder().setName('yaht_board').setDescription('Displays the Yahtzee board'),
+    new SlashCommandBuilder().setName('yaht_aces').setDescription('Score the current roll as an aces entry'),
+    new SlashCommandBuilder().setName('yaht_twos').setDescription('Score the current roll as a twos entry'),
+    new SlashCommandBuilder().setName('yaht_threes').setDescription('Score the current roll as a threes entry'),
+    new SlashCommandBuilder().setName('yaht_fours').setDescription('Score the current roll as a fours entry'),
+    new SlashCommandBuilder().setName('yaht_fives').setDescription('Score the current roll as a fives entry'),
+    new SlashCommandBuilder().setName('yaht_sixes').setDescription('Score the current roll as a sixes entry'),
+    new SlashCommandBuilder().setName('yaht_three_of_a_kind').setDescription('Score the current roll as a three of a kind entry'),
+    new SlashCommandBuilder().setName('yaht_four_of_a_kind').setDescription('Score the current roll as a four of a kind entry'),
+    new SlashCommandBuilder().setName('yaht_full_house').setDescription('Score the current roll as a full house entry'),
+    new SlashCommandBuilder().setName('yaht_small_straight').setDescription('Score the current roll as a small straight entry'),
+    new SlashCommandBuilder().setName('yaht_large_straight').setDescription('Score the current roll as a large straight entry'),
+    new SlashCommandBuilder().setName('yaht_yahtzee').setDescription('Score the current roll as a yahtzee entry'),
+    new SlashCommandBuilder().setName('yaht_chance').setDescription('Score the current roll as a chance entry'),
     new SlashCommandBuilder().setName('yaht_scoreboard').setDescription('Displays the high scores for yahtzee for the current user')
 ]
 
@@ -346,12 +410,197 @@ const funcDefs = [
         ctx.reply(myCurrentGame.display());
     }),
 
-    new DiscordCommand('yaht_score', ctx => {
+    new DiscordCommand('yaht_aces', ctx => {
         if (!requireRoll(ctx)) return;
         let myCurrentGame = currentGame.get(ctx.user.id);
-        let entry = ctx.options.getInteger('entry');
-        // myCurrentGame.release(die);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                let n = getYahtzeeValue(myCurrentGame, myCurrentGame.rollState.outcome);
+                if (n != 1) {
+                    ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                    return;
+                }
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Aces, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_twos', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                let n = getYahtzeeValue(myCurrentGame, myCurrentGame.rollState.outcome);
+                if (n != 2) {
+                    ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                    return;
+                }
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Twos, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_threes', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                let n = getYahtzeeValue(myCurrentGame, myCurrentGame.rollState.outcome);
+                if (n != 3) {
+                    ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                    return;
+                }
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Threes, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_fours', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                let n = getYahtzeeValue(myCurrentGame, myCurrentGame.rollState.outcome);
+                if (n != 4) {
+                    ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                    return;
+                }
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Fours, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_fives', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                let n = getYahtzeeValue(myCurrentGame, myCurrentGame.rollState.outcome);
+                if (n != 5) {
+                    ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                    return;
+                }
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Fives, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_sixes', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                let n = getYahtzeeValue(myCurrentGame, myCurrentGame.rollState.outcome);
+                if (n != 6) {
+                    ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                    return;
+                }
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Sixes, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_three_of_a_kind', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                return;
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.ThreeOfAKind, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_four_of_a_kind', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                return;
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.FourOfAKind, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_full_house', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                return;
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.FullHouse, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_small_straight', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                return;
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.SmallStraight, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_large_straight', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                return;
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.LargeStraight, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_yahtzee', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        scoreRoll(myCurrentGame.state.Yahtzee, myCurrentGame.rollState.outcome);
         ctx.reply(myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_chance', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (isJoker(myCurrentGame, myCurrentGame.rollState.outcome)) {
+            if (!correspondingUpperUsed(myCurrentGame, myCurrentGame.rollState.outcome)) {
+                ctx.reply("You must assign a joker to it's corresponding upper value before using it elsewhere.");
+                return;
+            }
+        }
+        let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Chance, myCurrentGame.rollState.outcome);
+        ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
     new DiscordCommand('yaht_board', ctx => {
