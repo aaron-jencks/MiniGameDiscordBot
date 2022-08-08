@@ -44,6 +44,9 @@ function testRoll() {
     funcs.get('yaht_release')(generateNewContext(testUser));
     argMap.set('die', 3);
     funcs.get('yaht_release')(generateNewContext(testUser));
+    funcs.get('yaht_roll')(generateNewContext(testUser));
+    funcs.get('yaht_roll')(generateNewContext(testUser));
+    funcs.get('yaht_aces')(generateNewContext(testUser));
 }
 
 const testFuncs = [

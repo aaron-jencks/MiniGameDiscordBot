@@ -55,10 +55,16 @@ class UpperYahtzeeEntry extends SummedYahtzeeEntry {
     }
 
     matches(dice) {
-        dice.forEach(d => {
-            if (d != v) return false;
-        });
+        for (const d of dice) {
+            if (d != this.value) return false;
+        }
         return true;
+    }
+
+    score(dice) {
+        let sum = 0;
+        for (const d of dice) if (d == this.value) sum += this.value;
+        return sum;
     }
 }
 
@@ -138,9 +144,10 @@ class YahtzeeYahtzeeEntry extends StaticScoredYahtzeeEntry {
 
     matches(dice) {
         let t = dice[0];
-        dice.forEach(d => {
+        console.log(dice);
+        for (const d of dice) {
             if (d != t) return false;
-        })
+        }
         return true;
     }
 
@@ -293,9 +300,12 @@ function checkMultipleYahtzee(game, dice) {
 
 function isJoker(game, dice) {
     let nums = dice.map(d => d.value);
+    console.log(nums);
     if (game.state.Yahtzee.matches(nums)) {
+        console.log('This is a yahtzee!');
         return true;
     }
+    console.log('This is not a yahtzee...');
     return false;
 }
 
