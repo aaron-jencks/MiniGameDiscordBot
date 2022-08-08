@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { DiscordCommand } = require('./discord-command-templates.js');
-const { boxString } = require('./utils.js');
+const { boxString, concatMultilineStrings } = require('./utils.js');
 
 var currentGame = new Map();
 
@@ -36,7 +36,7 @@ class YahtzeeEntry {
                 case 6:
                     return "\u2685";
             }
-         }).join('') : 'Not used yet');
+         }).join(' ') : 'Not used yet');
     }
 }
 
@@ -149,6 +149,54 @@ class YahtzeeYahtzeeEntry extends StaticScoredYahtzeeEntry {
     }
 }
 
+class RolledDice {
+    constructor() {
+        this.value = 0;
+        this.hold = false;
+    }
+
+    roll() {
+        if (!this.hold) {
+            this.value = Math.floor(Math.random() * 6) + 1;
+        }
+    }
+
+    display() {
+        console.log(this.value);
+        let lines = [];
+        let bolden = this.hold ? '**' : '';
+        let symbol = bolden;
+        switch (this.value) {
+            case 0:
+                symbol += '';
+                break;
+            case 1:
+                symbol += '\u2680';
+                break;
+            case 2:
+                symbol += "\u2681";
+                break;
+            case 3:
+                symbol += "\u2682";
+                break;
+            case 4:
+                symbol += "\u2683";
+                break;
+            case 5:
+                symbol += "\u2684";
+                break;
+            case 6:
+                symbol += "\u2685";
+                break;
+        }
+        symbol += bolden;
+        lines.push(symbol);
+        lines.push(bolden + this.value.toString() + bolden);
+        lines.push(this.hold ? '\u25CF' : '\u25CB');
+        return lines.join('\n');
+    }
+}
+
 class YahtzeeBoard {
     constructor() {
         this.state = {
@@ -165,6 +213,16 @@ class YahtzeeBoard {
             LargeStraight: new StraightYahtzeeEntry('Large straight', 5),
             Yahtzee: new YahtzeeYahtzeeEntry(),
             Chance: new SummedYahtzeeEntry('Chance'),
+        };
+        this.rollState = {
+            rollCount: 0,
+            outcome: [ 
+                new RolledDice(), 
+                new RolledDice(),
+                new RolledDice(), 
+                new RolledDice(),
+                new RolledDice(),
+            ]
         }
     }
 
@@ -175,8 +233,17 @@ class YahtzeeBoard {
         return sum + ((sum >= 63) ? 35 : 0);
     }
 
+    displayRoll() {
+        let diceDisplays = this.rollState.outcome.map(d => d.display());
+        diceDisplays.unshift('Current Roll:\nNumer:\nHolds:');
+        return concatMultilineStrings(diceDisplays, ' ') + `\nYou have ${3 - this.rollState.rollCount} rolls left`;
+    }
+
     display() {
-        let entries = ["Entries:"]
+        let entries = ["Entries:"];
+
+        if (this.rollState.rollCount > 0) entries.unshift(this.displayRoll() + '\n');
+        else entries.unshift('You can roll with yaht_roll');
 
         for (const [ename, evalue] of Object.entries(this.state)) {
             entries.push(evalue.display());
@@ -192,34 +259,57 @@ class YahtzeeBoard {
 
     isOver() {
         let hasEmpty = false;
-        for(let i = 0; i < 3; i++) {
-            if (this.board[0][i] != 0 && this.board[0][i] == this.board[1][i] && this.board[0][i] == this.board[2][i]) return true;  // Vertical checks
-            if (this.board[i][0] != 0 && this.board[i][0] == this.board[i][1] && this.board[i][0] == this.board[i][2]) return true;  // Horizontal checks
-            if (!hasEmpty) {
-                for (let j = 0; j < 3; j++) {
-                    if (this.board[i][j] == 0) {
-                        hasEmpty = true;
-                        break;
-                    }
-                }
+        for (const [ename, evalue] of Object.entries(this.state)) {
+            if (!evalue.used) {
+                hasEmpty = true;
+                break;
             }
         }
-
-        return (this.board[0][0] != 0 && this.board[0][0] == this.board[1][1] && this.board[0][0] == this.board[2][2]) ||            // Diagonal 1
-            (this.board[2][0] != 0 && this.board[2][0] == this.board[1][1] && this.board[1][1] == this.board[0][2]) ||               // Diagonal 2
-            !hasEmpty;                                                                                                               // Cat's game
+        return !hasEmpty;
     }
+
+    roll() {
+        if (this.rollState.rollCount++ < 3) this.rollState.outcome.forEach(d => d.roll());
+    }
+
+    hold(d) {
+        if (this.rollState.rollCount > 0) this.rollState.outcome[d].hold = true;
+    }
+
+    release(d) {
+        if (this.rollState.rollCount > 0) this.rollState.outcome[d].hold = false;
+    }
+}
+
+function requireGame(ctx) {
+    if (!currentGame.has(ctx.user.id)) {
+        ctx.reply("You need to start a new game with 'yaht_new' first!");
+        return false;
+    }
+    return true;
+}
+
+function requireRoll(ctx) {
+    if (!requireGame(ctx)) return;
+    let myCurrentGame = currentGame.get(ctx.user.id);
+    if (myCurrentGame.roll.rollCount == 0) {
+        ctx.reply('You need to roll before you can hold or release dice');
+        return false;
+    }
+    return true;
 }
 
 const funcNames = [
     new SlashCommandBuilder().setName('yaht_new').setDescription('Starts a new Yahtzee game for the current user'),
 	new SlashCommandBuilder().setName('yaht_roll').setDescription('Rolls the dice for the current Yahtzee game'),
-    new SlashCommandBuilder().setName('yaht_score').setDescription('Decides how to score the current Yahtzee roll'),
+    new SlashCommandBuilder().setName('yaht_score').setDescription('Decides how to score the current Yahtzee roll')
+        .addIntegerOption(option => option.setName('entry').setDescription('The entry to score the roll for')),
     new SlashCommandBuilder().setName('yaht_hold').setDescription('Holds the selected dice for rerolling')
         .addIntegerOption(option => option.setName('die').setDescription('Dice to hold (0-4)')),
     new SlashCommandBuilder().setName('yaht_release').setDescription('Releases the selected dice for rerolling')
         .addIntegerOption(option => option.setName('die').setDescription('Dice to hold (0-4)')),
     new SlashCommandBuilder().setName('yaht_board').setDescription('Displays the Yahtzee board'),
+    new SlashCommandBuilder().setName('yaht_scoreboard').setDescription('Displays the high scores for yahtzee for the current user')
 ]
 
 const funcDefs = [
@@ -228,39 +318,45 @@ const funcDefs = [
         ctx.reply("Created a new Yahtzee Game!\n"+currentGame.get(ctx.user.id).display());
     }),
 
-    new DiscordCommand('ttt_play', ctx => {
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to start a new game with 'ttt.new' first!");
+    new DiscordCommand('yaht_roll', ctx => {
+        if (!requireGame(ctx)) return;
+
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        if (myCurrentGame.roll.rollCount >= 3) {
+            ctx.reply('Sorry, but you already used all of you\'re rolls!');
             return;
         }
-
-        const row = ctx.options.getInteger("row");
-        const column = ctx.options.getInteger("column");
-
-        let myCurrentGame = currentGame.get(ctx.guildId);
-
-        if (myCurrentGame.isValid(row, column)) {
-            myCurrentGame.place(row, column);
-            myCurrentGame.togglePlayer();
-        }
-        else {
-            ctx.reply(`Sorry but (${row}, ${column}) is not valid!\n${myCurrentGame.display()}`);
-            return;
-        }
-
-        if (myCurrentGame.isOver()) {
-            ctx.reply(myCurrentGame.display() + `\n${(myCurrentGame.winner() == 0) ? "Cat's Game!" : 
-                (((myCurrentGame.winner() == 1) ? myCurrentGame.player1 : myCurrentGame.player2) + " wins!")}`);
-        }
-        else ctx.reply(myCurrentGame.display());
+        myCurrentGame.roll();
+        ctx.reply(myCurrentGame.display());
     }),
 
-    new DiscordCommand('ttt_board', ctx => {
-        if (!currentGame.has(ctx.guildId)) {
-            ctx.reply("You need to start a new game with 'ttt.new' first!");
-            return;
-        }
-        ctx.reply(currentGame.get(ctx.guildId).display());
+    new DiscordCommand('yaht_hold', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        let die = ctx.options.getInteger('die');
+        myCurrentGame.hold(die);
+        ctx.reply(myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_release', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        let die = ctx.options.getInteger('die');
+        myCurrentGame.release(die);
+        ctx.reply(myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_score', ctx => {
+        if (!requireRoll(ctx)) return;
+        let myCurrentGame = currentGame.get(ctx.user.id);
+        let entry = ctx.options.getInteger('entry');
+        // myCurrentGame.release(die);
+        ctx.reply(myCurrentGame.display());
+    }),
+
+    new DiscordCommand('yaht_board', ctx => {
+        if (!requireGame(ctx)) return;
+        ctx.reply(currentGame.get(ctx.user.id).display());
     })
 ]
 

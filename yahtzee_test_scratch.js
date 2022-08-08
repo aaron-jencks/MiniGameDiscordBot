@@ -33,6 +33,20 @@ function testDisplay() {
     funcs.get('yaht_new')(generateNewContext(testUser));
 }
 
+function testRoll() {
+    funcs.get('yaht_new')(generateNewContext(testUser));
+    funcs.get('yaht_roll')(generateNewContext(testUser));
+    for (let e = 0; e < 5; e++) {
+        argMap.set('die', e);
+        funcs.get('yaht_hold')(generateNewContext(testUser));
+    }
+    argMap.set('die', 2);
+    funcs.get('yaht_release')(generateNewContext(testUser));
+    argMap.set('die', 3);
+    funcs.get('yaht_release')(generateNewContext(testUser));
+}
+
 const testFuncs = [
     testDisplay,
+    testRoll,
 ].forEach(t => t());
