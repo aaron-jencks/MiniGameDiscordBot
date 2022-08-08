@@ -21,7 +21,7 @@ class YahtzeeEntry {
     }
 
     display() {
-        return this.name + (this.entryDice ? this.entryDice.map(c => { 
+        return this.name + ': ' + (this.entryDice ? this.entryDice.map(c => { 
             switch (c) {
                 case 1:
                     return '\u2680';
@@ -150,7 +150,7 @@ class YahtzeeYahtzeeEntry extends StaticScoredYahtzeeEntry {
 }
 
 class YahtzeeBoard {
-    constructor(p1, p2, p1o) {
+    constructor() {
         this.state = {
             Aces: new UpperYahtzeeEntry('Aces', 1),
             Twos: new UpperYahtzeeEntry('Twos', 2),
@@ -170,18 +170,22 @@ class YahtzeeBoard {
 
     calculateUpper() {
         let sum = 0;
-        sum += this.state.Aces + this.state.Twos + this.state.Threes + this.state.Fours + this.state.Fives + this.state.Sixes;
+        sum += this.state.Aces.entryScore + this.state.Twos.entryScore + this.state.Threes.entryScore + 
+            this.state.Fours.entryScore + this.state.Fives.entryScore + this.state.Sixes.entryScore;
         return sum + ((sum >= 63) ? 35 : 0);
     }
 
     display() {
         let entries = ["Entries:"]
-        for ([ename, evalue] of Object.entries(this.state)) {
+
+        for (const [ename, evalue] of Object.entries(this.state)) {
             entries.push(evalue.display());
         }
+
         let score = this.calculateUpper();
         score += this.state.ThreeOfAKind.entryScore + this.state.FourOfAKind.entryScore + this.state.FullHouse.entryScore + 
-            this.state.SmallStraight.entryScore  + this.state.LargeStraight.entryScore + this.state.Yahtzee.entryScore + this.state.Chance.entryScore;
+            this.state.SmallStraight.entryScore  + this.state.LargeStraight.entryScore + this.state.Yahtzee.entryScore + 
+            this.state.Chance.entryScore;
         entries.push(`Current Score: ${score}`);
         return "```\n" + boxString(entries.join('\n')) + "\n```"; 
     }
@@ -208,15 +212,20 @@ class YahtzeeBoard {
 }
 
 const funcNames = [
-    new SlashCommandBuilder().setName('yaht_new').setDescription('Starts a new tic tac toe game'),
-	new SlashCommandBuilder().setName('yaht_roll').setDescription('Plays at a position in a tic tac toe game, syntax: ttt.play row column'),
-    new SlashCommandBuilder().setName('ttt_board').setDescription('Displays the current game board'),
+    new SlashCommandBuilder().setName('yaht_new').setDescription('Starts a new Yahtzee game for the current user'),
+	new SlashCommandBuilder().setName('yaht_roll').setDescription('Rolls the dice for the current Yahtzee game'),
+    new SlashCommandBuilder().setName('yaht_score').setDescription('Decides how to score the current Yahtzee roll'),
+    new SlashCommandBuilder().setName('yaht_hold').setDescription('Holds the selected dice for rerolling')
+        .addIntegerOption(option => option.setName('die').setDescription('Dice to hold (0-4)')),
+    new SlashCommandBuilder().setName('yaht_release').setDescription('Releases the selected dice for rerolling')
+        .addIntegerOption(option => option.setName('die').setDescription('Dice to hold (0-4)')),
+    new SlashCommandBuilder().setName('yaht_board').setDescription('Displays the Yahtzee board'),
 ]
 
 const funcDefs = [
-    new DiscordCommand('ttt_new', ctx => { 
-        currentGame.set(ctx.guildId, new TicTacToeBoard('Xs', 'Os', Math.random() >= 0.5));
-        ctx.reply("Created a new Tic Tac Toe Game!\n"+currentGame.get(ctx.guildId).display());
+    new DiscordCommand('yaht_new', ctx => { 
+        currentGame.set(ctx.user.id, new YahtzeeBoard());
+        ctx.reply("Created a new Yahtzee Game!\n"+currentGame.get(ctx.user.id).display());
     }),
 
     new DiscordCommand('ttt_play', ctx => {
