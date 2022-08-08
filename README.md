@@ -4,6 +4,7 @@ Discord Bot that allows you to play terminal based games. Because of implementat
 1. Tic Tac Toe
 2. Connect Four
 3. Texas Hold 'Em
+4. Yahtzee
 
 ## Tic Tac Toe
 Allows you to play tic tac toe in your server.
@@ -96,3 +97,25 @@ D testUser
 
 <@1> wins with a TWO PAIRS for 1200!
 ```
+
+## Yahtzee
+
+Allows the user to play yahtzee, each user can run a game on their own, but only a single game instance per user is permitted.
+
+### Commands
+- `yaht_new` Starts a new yahtzee game for the current user
+- `yaht_roll` Rolls the dice for a started yahtzee game for the current user
+- `yaht_hold` Holds a given die for so that it won't be rerolled in the following rolls.
+- `yaht_release` Releases a given die, so that it may be rerolled in the following rolls.
+- `yaht_aces` Scores the current roll as an Aces entry
+- `yaht_twos` Scores the current roll as a Twos entry
+- `yaht_threes` Scores the current roll as a Threes entry
+- `yaht_fours` Scores the current roll as a Fours entry
+- `yaht_fives` Scores the current roll as a Fives entry
+- `yaht_sixes` Scores the current roll as a Sixes entry
+- `yaht_three_of_a_kind` Scores the current roll as a Three of a Kind entry
+- `yaht_four_of_a_kind` Scores the current roll as a Four of a Kind entry
+- `yaht_small_straight` Scores the current roll as a Small Straight entry
+- `yaht_large_straight` Scores the current roll as a Large Straight entry
+- `yaht_yahtzee` Scores the current roll as a Yahtzee entry
+- `yaht_chance` Scores the current roll as a chance entry
