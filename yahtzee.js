@@ -76,10 +76,13 @@ class NOfAKindYahtzeeEntry extends SummedYahtzeeEntry {
 
     matches(dice) {
         for (let v = 1; v < 7; v++) {
+            console.log(`Checking die value: ${v}`);
             let count = 0;
             dice.forEach(d => {
                 if (d == v && ++count >= this.number) return true;
-            })
+            });
+            console.log(`Final Count: ${count}`);
+            if (count >= this.number) return true;
         }
         return false;
     }
@@ -342,6 +345,14 @@ function scoreRoll(entry, dice, game) {
     entry.entryScore = entry.score(nums);
     entry.entryDice = nums;
     entry.used = true;
+    game.rollState.rollCount = 0;
+    game.rollState.outcome = [ 
+        new RolledDice(), 
+        new RolledDice(),
+        new RolledDice(), 
+        new RolledDice(),
+        new RolledDice(),
+    ]
 }
 
 function requireGame(ctx) {
@@ -355,8 +366,8 @@ function requireGame(ctx) {
 function requireRoll(ctx) {
     if (!requireGame(ctx)) return;
     let myCurrentGame = currentGame.get(ctx.user.id);
-    if (myCurrentGame.roll.rollCount == 0) {
-        ctx.reply('You need to roll before you can hold or release dice');
+    if (myCurrentGame.rollState.rollCount == 0) {
+        ctx.reply('You need to roll before you can hold, release, or score dice');
         return false;
     }
     return true;
@@ -433,7 +444,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.Aces, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Aces, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -450,7 +461,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.Twos, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Twos, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -467,7 +478,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.Threes, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Threes, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -484,7 +495,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.Fours, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Fours, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -501,7 +512,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.Fives, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Fives, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -518,7 +529,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.Sixes, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Sixes, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -532,7 +543,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.ThreeOfAKind, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.ThreeOfAKind, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -546,7 +557,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.FourOfAKind, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.FourOfAKind, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -560,7 +571,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.FullHouse, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.FullHouse, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -574,7 +585,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.SmallStraight, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.SmallStraight, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
@@ -588,14 +599,14 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.LargeStraight, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.LargeStraight, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
     new DiscordCommand('yaht_yahtzee', ctx => {
         if (!requireRoll(ctx)) return;
         let myCurrentGame = currentGame.get(ctx.user.id);
-        scoreRoll(myCurrentGame.state.Yahtzee, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Yahtzee, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply(myCurrentGame.display());
     }),
 
@@ -609,7 +620,7 @@ const funcDefs = [
             }
         }
         let bonus = checkMultipleYahtzee(myCurrentGame, myCurrentGame.rollState.outcome);
-        scoreRoll(myCurrentGame.state.Chance, myCurrentGame.rollState.outcome);
+        scoreRoll(myCurrentGame.state.Chance, myCurrentGame.rollState.outcome, myCurrentGame);
         ctx.reply((bonus ? 'You got a bonus!\n' : '') + myCurrentGame.display());
     }),
 
