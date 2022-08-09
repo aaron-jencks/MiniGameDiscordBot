@@ -44,7 +44,7 @@ class SummedYahtzeeEntry extends YahtzeeEntry {
     score(dice) {
         let sum = 0;
         dice.forEach(d => sum += d);
-        return sum;
+        return this.matches(dice) ? sum : 0;
     }
 }
 
@@ -78,7 +78,7 @@ class NOfAKindYahtzeeEntry extends SummedYahtzeeEntry {
         for (let v = 1; v < 7; v++) {
             let count = 0;
             dice.forEach(d => {
-                if (d == v && ++count >= n) return true;
+                if (d == v && ++count >= this.number) return true;
             })
         }
         return false;
@@ -396,7 +396,7 @@ const funcDefs = [
         if (!requireGame(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.user.id);
-        if (myCurrentGame.roll.rollCount >= 3) {
+        if (myCurrentGame.rollState.rollCount >= 3) {
             ctx.reply('Sorry, but you already used all of you\'re rolls!');
             return;
         }

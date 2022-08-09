@@ -13,19 +13,31 @@ class GameBoard {
         };
         this.state.stateQueue.push('initialize');
     }
+    
     processState() {
         while (this.state.stateQueue.length > 0) {
             let currentState = this.state.stateQueue.shift();
             this.stateMap[currentState]();
         }
     }
+
     display() {}
+
     evaluateState() {}
+
     initialize() {}
+
     exit() {
         this.state.isExiting = true;
     }
     finalState() {}
+
+    enqueueState(s) {
+        this.state.stateQueue.push(s);
+    }
+    enqueueStates(sarr) {
+        sarr.forEach(s => this.state.stateQueue.push(s));
+    }
 }
 
 module.exports = {

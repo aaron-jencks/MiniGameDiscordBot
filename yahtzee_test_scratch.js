@@ -1,52 +1,26 @@
 const yaht = require("./yahtzee.js");
+const tutils = require("./testing/testing_utils.js");
 
-const funcs = new Map();
-yaht.funcDefs.forEach(d => {
-    funcs.set(d.name, ctx => d.execute(ctx));
-})
-
-const replyFunc = s => console.log(s);
-
-const argMap = new Map();
-
-const testUser = {
-    'id': 0,
-    'username': 'testUser',
-    'tag': 'testUser#0',
-    send: m => console.log(m)
-}
-
-const generateNewContext = (user) => {
-    return {
-        'guildId': 0,
-        'reply': replyFunc,
-        'user': user,
-        'options': {
-            'getInteger': s => argMap.get(s),
-            'getMentionable': s => argMap.get(s),
-            'getUser': s => argMap.get(s)
-        }
-    };
-}
+const funcs = tutils.generateFuncMap(yaht.funcDefs);
 
 function testDisplay() {
-    funcs.get('yaht_new')(generateNewContext(testUser));
+    funcs.get('yaht_new')(tutils.generateNewContext(tutils.testUser));
 }
 
 function testRoll() {
-    funcs.get('yaht_new')(generateNewContext(testUser));
-    funcs.get('yaht_roll')(generateNewContext(testUser));
+    funcs.get('yaht_new')(tutils.generateNewContext(tutils.testUser));
+    funcs.get('yaht_roll')(tutils.generateNewContext(tutils.testUser));
     for (let e = 0; e < 5; e++) {
-        argMap.set('die', e);
-        funcs.get('yaht_hold')(generateNewContext(testUser));
+        tutils.argMap.set('die', e);
+        funcs.get('yaht_hold')(tutils.generateNewContext(tutils.testUser));
     }
-    argMap.set('die', 2);
-    funcs.get('yaht_release')(generateNewContext(testUser));
-    argMap.set('die', 3);
-    funcs.get('yaht_release')(generateNewContext(testUser));
-    funcs.get('yaht_roll')(generateNewContext(testUser));
-    funcs.get('yaht_roll')(generateNewContext(testUser));
-    funcs.get('yaht_aces')(generateNewContext(testUser));
+    tutils.argMap.set('die', 2);
+    funcs.get('yaht_release')(tutils.generateNewContext(tutils.testUser));
+    tutils.argMap.set('die', 3);
+    funcs.get('yaht_release')(tutils.generateNewContext(tutils.testUser));
+    funcs.get('yaht_roll')(tutils.generateNewContext(tutils.testUser));
+    funcs.get('yaht_roll')(tutils.generateNewContext(tutils.testUser));
+    funcs.get('yaht_aces')(tutils.generateNewContext(tutils.testUser));
 }
 
 const testFuncs = [
