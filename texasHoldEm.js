@@ -63,7 +63,8 @@ class TexasHoldEmBoard {
                     'nickname': nickname,
                     'folded': false,
                     'discordObj': userObj,
-                    'roundBet': 0
+                    'roundBet': 0,
+                    'dmChannel': null,
                 });
             }
     
@@ -87,7 +88,8 @@ class TexasHoldEmBoard {
             'nickname': playerMap.get(player).nickname,
             'folded': this.playerMap.get(player).folded,
             'discordObj': this.playerMap.get(player).discordObj,
-            'roundBet': this.playerMap.get(player).roundBet
+            'roundBet': this.playerMap.get(player).roundBet,
+            'dmChannel': this.playerMap.get(player).dmChannel,
         });
     }
 
@@ -547,7 +549,14 @@ const funcDefs = [
             result += hand;
             result += '\n```';
 
-            tplayer.discordObj.send(result);
+            if (tplayer.dmChannel == null) {
+                tplayer.discordObj.createDM(true).then(channel => {
+                    channel.send(result);
+                    tplayer.dmChannel = channel;
+                })
+                .catch(err => console.log(err));
+            }
+            else tplayer.dmChannel.send(result);
         });
 
         ctx.reply(`Starting round with ${myCurrentGame.players.length} player(s)\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!`);
