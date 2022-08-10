@@ -484,13 +484,13 @@ function handleBetting(ctx, prefix) {
         myCurrentGame.players.forEach(p => {
             let tplayer = myCurrentGame.playerMap.get(p);
             let hand = tplayer.hand.display();
-            result += boxString(concatMultilineStrings([tplayer.nickname, hand], stringAlignmentEnum.LEFT, stringAlignmentEnum.CENTER)) + '\n';
+            result += boxString(concatMultilineStrings([tplayer.nickname, ' ', hand], stringAlignmentEnum.LEFT, stringAlignmentEnum.CENTER)) + '\n';
         })
 
         myCurrentGame.nextPhase();
 
         myCurrentGame.lastRound.winners.forEach(w => {
-            result += `${userMention(w.player)} wins with a ${w.hand} for ${myCurrentGame.lastRound.amount}!\n\`\`\`\n`;
+            result += `\n\`\`\`${userMention(w.player)} wins with a ${w.hand} for ${myCurrentGame.lastRound.amount}!\n`;
         })
 
         result += 'The round is over! use \`/poker_start\` to start the next round!';
