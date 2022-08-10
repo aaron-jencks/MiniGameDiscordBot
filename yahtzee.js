@@ -174,7 +174,7 @@ class RolledDice {
     display() {
         console.log(this.value);
         let lines = [];
-        let bolden = this.hold ? '**' : '';
+        let bolden = '';
         let symbol = bolden;
         switch (this.value) {
             case 0:
