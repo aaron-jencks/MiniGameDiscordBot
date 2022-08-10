@@ -2,10 +2,11 @@ require("dotenv").config()
 const ttt = require("./tictactoe.js");
 const c4 = require("./connectfour.js");
 const poker = require("./texasHoldEm.js");
+const yaht = require("./yahtzee.js");
 const { Routes } = require('discord.js');
 const { REST } = require('@discordjs/rest');
 
-const commands = (ttt.funcNames.concat(c4.funcNames).concat(poker.funcNames))
+const commands = (ttt.funcNames.concat(c4.funcNames).concat(poker.funcNames).concat(yaht.funcNames))
 	.map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
