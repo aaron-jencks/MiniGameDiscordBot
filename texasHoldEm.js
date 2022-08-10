@@ -545,6 +545,7 @@ const funcDefs = [
 
             let result = "```\nYour Hand:\n";
             result += hand;
+            result += '\n```';
 
             tplayer.discordObj.send(result);
         });
