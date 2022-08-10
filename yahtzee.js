@@ -247,7 +247,7 @@ class YahtzeeBoard {
 
     displayRoll() {
         let diceDisplays = this.rollState.outcome.map(d => d.display());
-        diceDisplays.unshift('Current Roll:\nNumer:\nHolds:');
+        diceDisplays.unshift('Current Roll:\nNumer:\nHolds:\nDie:');
         return concatMultilineStrings(diceDisplays, ' ') + `\nYou have ${3 - this.rollState.rollCount} rolls left`;
     }
 
