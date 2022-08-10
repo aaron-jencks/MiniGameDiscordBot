@@ -3,8 +3,9 @@ const discord = require("discord.js")
 const ttt = require("./tictactoe.js");
 const c4 = require("./connectfour.js");
 const poker = require("./texasHoldEm.js");
+const yaht = require("./yahtzee.js");
 
-const funcDefs = ttt.funcDefs.concat(c4.funcDefs).concat(poker.funcDefs);
+const funcDefs = ttt.funcDefs.concat(c4.funcDefs).concat(poker.funcDefs).concat(yaht.funcDefs);
 
 const client = new discord.Client({
     intents: discord.GatewayIntentBits.Guilds,
