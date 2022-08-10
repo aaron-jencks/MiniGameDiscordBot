@@ -160,9 +160,10 @@ class YahtzeeYahtzeeEntry extends StaticScoredYahtzeeEntry {
 }
 
 class RolledDice {
-    constructor() {
+    constructor(index) {
         this.value = 0;
         this.hold = false;
+        this.index = index;
     }
 
     roll() {
@@ -203,6 +204,7 @@ class RolledDice {
         lines.push(symbol);
         lines.push(bolden + this.value.toString() + bolden);
         lines.push(this.hold ? '\u25CF' : '\u25CB');
+        lines.push(this.index.toString());
         return lines.join('\n');
     }
 }
@@ -227,11 +229,11 @@ class YahtzeeBoard {
         this.rollState = {
             rollCount: 0,
             outcome: [ 
-                new RolledDice(), 
-                new RolledDice(),
-                new RolledDice(), 
-                new RolledDice(),
-                new RolledDice(),
+                new RolledDice(0), 
+                new RolledDice(1),
+                new RolledDice(2), 
+                new RolledDice(3),
+                new RolledDice(4),
             ]
         }
     }
@@ -347,11 +349,11 @@ function scoreRoll(entry, dice, game) {
     entry.used = true;
     game.rollState.rollCount = 0;
     game.rollState.outcome = [ 
-        new RolledDice(), 
-        new RolledDice(),
-        new RolledDice(), 
-        new RolledDice(),
-        new RolledDice(),
+        new RolledDice(0), 
+        new RolledDice(1),
+        new RolledDice(2), 
+        new RolledDice(3),
+        new RolledDice(4),
     ]
 }
 
