@@ -201,10 +201,10 @@ class RolledDice {
                 break;
         }
         symbol += bolden;
+        lines.push(this.index.toString());
         lines.push(symbol);
         lines.push(bolden + this.value.toString() + bolden);
         lines.push(this.hold ? '\u25CF' : '\u25CB');
-        lines.push(this.index.toString());
         return lines.join('\n');
     }
 }
@@ -247,7 +247,7 @@ class YahtzeeBoard {
 
     displayRoll() {
         let diceDisplays = this.rollState.outcome.map(d => d.display());
-        diceDisplays.unshift('Current Roll:\nNumer:\nHolds:\nDie:');
+        diceDisplays.unshift('Die:\nCurrent Roll:\nNumer:\nHolds:');
         return concatMultilineStrings(diceDisplays, ' ') + `\nYou have ${3 - this.rollState.rollCount} rolls left`;
     }
 
