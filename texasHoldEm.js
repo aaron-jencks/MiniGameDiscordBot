@@ -484,7 +484,7 @@ function handleBetting(ctx, prefix) {
         myCurrentGame.players.forEach(p => {
             let tplayer = myCurrentGame.playerMap.get(p);
             let hand = tplayer.hand.display();
-            result += boxString(concatMultilineStrings([tplayer.nickname, ' ', hand], stringAlignmentEnum.LEFT, stringAlignmentEnum.CENTER)) + '\n';
+            result += boxString(concatMultilineStrings([tplayer.nickname, hand], ' ', stringAlignmentEnum.LEFT, stringAlignmentEnum.CENTER)) + '\n';
         })
 
         myCurrentGame.nextPhase();
