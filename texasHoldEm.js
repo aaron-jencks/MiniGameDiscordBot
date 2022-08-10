@@ -95,7 +95,7 @@ class TexasHoldEmBoard {
 
     nextPlayer() { 
         this.playerIndex = (this.playerIndex + 1) % this.players.length;
-        while (this.playerMap.get(this.players[this.playerIndex]).folded) {
+        while (this.playerMap.get(this.players[this.playerIndex]).folded || this.playerMap.get(this.players[this.playerIndex]).balance == 0) {
             this.playerIndex = (this.playerIndex + 1) % this.players.length;
         }
     }
@@ -484,8 +484,8 @@ function handleBetting(ctx, prefix) {
         result += `\n${myCurrentGame.display()}\n\`\`\`\nPlayer Hands:\n`;
 
         myCurrentGame.players.forEach(p => {
+            let tplayer = myCurrentGame.playerMap.get(p);
             if (!tplayer.folded) {
-                let tplayer = myCurrentGame.playerMap.get(p);
                 let hand = tplayer.hand.display();
                 result += boxString(concatMultilineStrings([tplayer.nickname, hand], ' ', stringAlignmentEnum.LEFT, stringAlignmentEnum.CENTER)) + '\n';
             }
@@ -535,14 +535,14 @@ const funcDefs = [
         ctx.reply("Created a new Texas Hold'em Game!\n"+currentGame.get(ctx.guildId).display());
     }),
 
-    new DiscordCommand('poker_start', ctx => { 
+    new DiscordCommand('poker_start', async (ctx) => { 
         if (!requireHost(ctx)) return;
 
         let myCurrentGame = currentGame.get(ctx.guildId);
 
         myCurrentGame.startRound();
 
-        myCurrentGame.players.forEach(p => {
+        for(const p of myCurrentGame.players) {
             let tplayer = myCurrentGame.playerMap.get(p)
 
             let hand = boxString(tplayer.hand.display());
@@ -552,14 +552,17 @@ const funcDefs = [
             result += '\n```';
 
             if (tplayer.dmChannel == null) {
-                tplayer.discordObj.createDM(true).then(channel => {
+                try {
+                    const channel = await tplayer.discordObj.createDM(true);
                     channel.send(result);
                     tplayer.dmChannel = channel;
-                })
-                .catch(err => console.log(err));
+                }
+                catch(err) {
+                    console.log(err);
+                }
             }
             else tplayer.dmChannel.send(result);
-        });
+        }
 
         ctx.reply(`Starting round with ${myCurrentGame.players.length} player(s)\n${myCurrentGame.display()}\n${userMention(myCurrentGame.getCurrentBetter())} , you are up to bet!`);
     }),

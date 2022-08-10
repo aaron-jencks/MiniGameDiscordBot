@@ -8,8 +8,8 @@ class DiscordCommand {
         return cmd === this.name;
     }
 
-    execute(ctx) {
-        this.callback(ctx);
+    async execute(ctx) {
+        await this.callback(ctx);
     }
 }
 

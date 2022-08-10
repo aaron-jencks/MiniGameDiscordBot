@@ -31,11 +31,11 @@ client.on('interactionCreate', async interaction => {
 
 	const { commandName } = interaction;
 
-	funcDefs.forEach(f => {
+	for (const f of funcDefs) {
         if (f.matches(commandName)) {
-            f.execute(interaction);
+            await f.execute(interaction);
         }
-    })
+    }
 });
 
 client.login(process.env.TOKEN)
